@@ -1,56 +1,73 @@
-import { createClient } from '@/lib/supabase/server'
-import Hero from '@/components/sections/Hero'
-import MorphingNavbar from '@/components/sections/MorphingNavbar'
-import About from '@/components/sections/About'
-import ProjectsGrid from '@/components/sections/ProjectsGrid'
-import CertificatesSection from '@/components/sections/CertificatesSection'
-import Contact from '@/components/sections/Contact'
-import type { Profile, Project, Certificate, AboutSection } from '@/lib/types'
+'use client'
 
-export default async function HomePage() {
-  const supabase = await createClient()
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
-  // try/catch: kalau Supabase down atau env var salah, halaman tetap render
-  // dengan data kosong/default alih-alih crash total (white screen).
-  let profile: Profile | null = null
-  let projects: Project[] = []
-  let certificates: Certificate[] = []
-  let aboutSections: AboutSection[] = []
+export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
 
-  try {
-    const [profileRes, projectsRes, certificatesRes, aboutRes] =
-      await Promise.all([
-        supabase.from('profile').select('*').limit(1).maybeSingle(),
-        supabase
-          .from('projects')
-          .select('*')
-          .order('display_order', { ascending: true }),
-        supabase
-          .from('certificates')
-          .select('*')
-          .order('display_order', { ascending: true }),
-        supabase
-          .from('about_sections')
-          .select('*')
-          .order('display_order', { ascending: true }),
-      ])
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
 
-    profile = profileRes.data
-    projects = projectsRes.data ?? []
-    certificates = certificatesRes.data ?? []
-    aboutSections = aboutRes.data ?? []
-  } catch (err) {
-    console.error('Gagal fetch data dari Supabase:', err)
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      setError('Email atau password salah.')
+      setLoading(false)
+      return
+    }
+
+    router.push('/secret-cmd')
+    router.refresh()
   }
 
   return (
-    <main>
-      <MorphingNavbar profile={profile} />
-      <Hero profile={profile} />
-      <About sections={aboutSections} />
-      <ProjectsGrid projects={projects} />
-      <CertificatesSection certificates={certificates} />
-      <Contact profile={profile} />
-    </main>
+    <div className="min-h-screen flex items-center justify-center bg-black px-4">
+      <form
+        onSubmit={handleLogin}
+        className="w-full max-w-sm p-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl"
+      >
+        <h1 className="text-xl font-semibold text-white mb-6">
+          Admin Access
+        </h1>
+
+        {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="w-full mb-3 px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="w-full mb-4 px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
+        >
+          {loading ? 'Memproses...' : 'Login'}
+        </button>
+      </form>
+    </div>
   )
 }

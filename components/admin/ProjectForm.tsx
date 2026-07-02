@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { Project } from '@/lib/types'
+import ImageUpload from './ImageUpload'
 
 interface ProjectFormProps {
   initial?: Partial<Project>
@@ -68,14 +69,24 @@ export default function ProjectForm({
         />
       </div>
 
-      <div>
-        <label className="block text-sm text-white/50 mb-1">URL Gambar</label>
-        <input
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://..."
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+      <div className="space-y-3">
+        <ImageUpload
+          bucket="project-images"
+          currentUrl={imageUrl || null}
+          onUploaded={(url) => setImageUrl(url)}
+          label="Upload Gambar Proyek"
         />
+        <div>
+          <label className="block text-sm text-white/50 mb-1">
+            Atau URL Gambar (dari internet)
+          </label>
+          <input
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://..."
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          />
+        </div>
       </div>
 
       <div>

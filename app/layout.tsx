@@ -1,35 +1,47 @@
-import type { Metadata } from 'next'
-import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
-import './globals.css'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import LogoutButton from '@/components/admin/LogoutButton'
+import Link from 'next/link'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-space-grotesk',
-})
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-jetbrains-mono',
-})
-
-export const metadata: Metadata = {
-  title: 'Nama Kamu — Full-Stack Developer',
-  description: 'Portofolio Full-Stack Developer & UI/UX Designer',
-}
-
-export default function RootLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/secret-cmd/login')
+  }
+
   return (
-    <html
-      lang="id"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
-    >
-      <body className="bg-black text-white font-sans antialiased">
-        {children}
-      </body>
-    </html>
+    <div className="min-h-screen bg-black text-white">
+      <header className="glass-nav sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <nav className="flex gap-6 text-sm">
+            <Link href="/secret-cmd" className="hover:text-cyan-400">
+              Dashboard
+            </Link>
+            <Link href="/secret-cmd/about" className="hover:text-cyan-400">
+              About
+            </Link>
+            <Link href="/secret-cmd/projects" className="hover:text-cyan-400">
+              Projects
+            </Link>
+            <Link
+              href="/secret-cmd/certificates"
+              className="hover:text-cyan-400"
+            >
+              Certificates
+            </Link>
+          </nav>
+          <LogoutButton />
+        </div>
+      </header>
+      <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>
+    </div>
   )
 }

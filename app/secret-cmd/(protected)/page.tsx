@@ -2,183 +2,172 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import AvatarUpload from '@/components/admin/AvatarUpload'
-import type { Profile } from '@/lib/types'
+import AboutSectionForm from '@/components/admin/AboutSectionForm'
+import type { AboutSection } from '@/lib/types'
+import { Pencil, Trash2, Plus, ArrowUp, ArrowDown } from 'lucide-react'
 
-export default function DashboardPage() {
+export default function AboutAdminPage() {
   const supabase = createClient()
-  const [profile, setProfile] = useState<Partial<Profile>>({})
+  const [sections, setSections] = useState<AboutSection[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState<AboutSection | null>(null)
+
+  async function loadSections() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('about_sections')
+      .select('*')
+      .order('display_order', { ascending: true })
+    setSections(data ?? [])
+    setLoading(false)
+  }
 
   useEffect(() => {
-    async function loadProfile() {
-      const { data } = await supabase.from('profile').select('*').maybeSingle()
-      if (data) setProfile(data)
-      setLoading(false)
-    }
-    loadProfile()
-  }, [supabase])
+    loadSections()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  async function handleAvatarUploaded(url: string) {
-    setProfile((p) => ({ ...p, avatar_url: url }))
-
-    // Simpan langsung ke DB begitu upload selesai, terpisah dari tombol
-    // Simpan utama — supaya foto tidak hilang kalau user lupa klik Simpan.
-    if (profile.id) {
-      await supabase
-        .from('profile')
-        .update({ avatar_url: url, updated_at: new Date().toISOString() })
-        .eq('id', profile.id)
-      setMessage('Foto profil tersimpan.')
-    }
+  async function handleCreate(
+    data: Omit<AboutSection, 'id' | 'created_at'>
+  ) {
+    const nextOrder =
+      sections.length > 0
+        ? Math.max(...sections.map((s) => s.display_order)) + 1
+        : 0
+    await supabase
+      .from('about_sections')
+      .insert({ ...data, display_order: nextOrder })
+    setShowForm(false)
+    loadSections()
   }
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
-    setMessage(null)
-
-    if (profile.id) {
-      const { error } = await supabase
-        .from('profile')
-        .update({
-          name: profile.name,
-          role: profile.role,
-          short_description: profile.short_description,
-          long_description: profile.long_description,
-          avatar_url: profile.avatar_url,
-          github_url: profile.github_url,
-          linkedin_url: profile.linkedin_url,
-          email: profile.email,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', profile.id)
-
-      if (error) {
-        setMessage('Gagal menyimpan: ' + error.message)
-      } else {
-        setMessage('Tersimpan.')
-      }
-    } else {
-      const { error } = await supabase.from('profile').insert(profile)
-      if (error) {
-        setMessage('Gagal menyimpan: ' + error.message)
-      } else {
-        setMessage('Profil dibuat.')
-      }
-    }
-
-    setSaving(false)
+  async function handleUpdate(
+    data: Omit<AboutSection, 'id' | 'created_at'>
+  ) {
+    if (!editing) return
+    await supabase
+      .from('about_sections')
+      .update(data)
+      .eq('id', editing.id)
+    setEditing(null)
+    loadSections()
   }
 
-  if (loading) return <p className="text-white/40">Memuat...</p>
+  async function handleDelete(id: string) {
+    if (!confirm('Yakin hapus paragraf ini?')) return
+    await supabase.from('about_sections').delete().eq('id', id)
+    loadSections()
+  }
+
+  async function handleMove(index: number, direction: 'up' | 'down') {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= sections.length) return
+
+    const current = sections[index]
+    const target = sections[targetIndex]
+
+    // Tukar display_order antara dua item bertetangga
+    await Promise.all([
+      supabase
+        .from('about_sections')
+        .update({ display_order: target.display_order })
+        .eq('id', current.id),
+      supabase
+        .from('about_sections')
+        .update({ display_order: current.display_order })
+        .eq('id', target.id),
+    ])
+    loadSections()
+  }
 
   return (
-    <div className="max-w-xl">
-      <h1 className="text-2xl font-bold mb-6">Edit Profil</h1>
-      <form onSubmit={handleSave} className="glass-card p-6 space-y-4">
-        {message && <p className="text-sm text-cyan-400">{message}</p>}
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Kelola Tentang Saya</h1>
+        {!showForm && !editing && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+          >
+            <Plus size={16} /> Tambah Paragraf
+          </button>
+        )}
+      </div>
 
-        <AvatarUpload
-          currentUrl={profile.avatar_url ?? null}
-          onUploaded={handleAvatarUploaded}
-        />
-
-        <div>
-          <label className="block text-sm text-white/50 mb-1">Nama</label>
-          <input
-            value={profile.name ?? ''}
-            onChange={(e) =>
-              setProfile((p) => ({ ...p, name: e.target.value }))
-            }
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+      {showForm && (
+        <div className="mb-8">
+          <AboutSectionForm
+            onSubmit={handleCreate}
+            onCancel={() => setShowForm(false)}
           />
         </div>
+      )}
 
-        <div>
-          <label className="block text-sm text-white/50 mb-1">Role</label>
-          <input
-            value={profile.role ?? ''}
-            onChange={(e) =>
-              setProfile((p) => ({ ...p, role: e.target.value }))
-            }
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+      {editing && (
+        <div className="mb-8">
+          <AboutSectionForm
+            initial={editing}
+            onSubmit={handleUpdate}
+            onCancel={() => setEditing(null)}
           />
         </div>
+      )}
 
-        <div>
-          <label className="block text-sm text-white/50 mb-1">
-            Deskripsi Singkat
-          </label>
-          <textarea
-            value={profile.short_description ?? ''}
-            onChange={(e) =>
-              setProfile((p) => ({ ...p, short_description: e.target.value }))
-            }
-            rows={3}
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
-          />
+      {loading ? (
+        <p className="text-white/40">Memuat...</p>
+      ) : (
+        <div className="space-y-3">
+          {sections.map((section, i) => (
+            <div key={section.id} className="glass-card p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="font-mono text-xs uppercase text-cyan-400/70 mb-1">
+                    [ {section.title} ]
+                  </p>
+                  <p className="text-sm text-white/50 line-clamp-2">
+                    {section.content}
+                  </p>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    onClick={() => handleMove(i, 'up')}
+                    disabled={i === 0}
+                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
+                  >
+                    <ArrowUp size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleMove(i, 'down')}
+                    disabled={i === sections.length - 1}
+                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
+                  >
+                    <ArrowDown size={16} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditing(section)
+                      setShowForm(false)
+                    }}
+                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(section.id)}
+                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-red-400"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {sections.length === 0 && (
+            <p className="text-white/40">Belum ada paragraf.</p>
+          )}
         </div>
-
-        <div>
-          <label className="block text-sm text-white/50 mb-1">
-            Deskripsi Lengkap (untuk section &quot;Tentang Saya&quot;)
-          </label>
-          <textarea
-            value={profile.long_description ?? ''}
-            onChange={(e) =>
-              setProfile((p) => ({ ...p, long_description: e.target.value }))
-            }
-            rows={5}
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-white/50 mb-1">GitHub URL</label>
-          <input
-            value={profile.github_url ?? ''}
-            onChange={(e) =>
-              setProfile((p) => ({ ...p, github_url: e.target.value }))
-            }
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-white/50 mb-1">
-            LinkedIn URL
-          </label>
-          <input
-            value={profile.linkedin_url ?? ''}
-            onChange={(e) =>
-              setProfile((p) => ({ ...p, linkedin_url: e.target.value }))
-            }
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-white/50 mb-1">Email</label>
-          <input
-            value={profile.email ?? ''}
-            onChange={(e) =>
-              setProfile((p) => ({ ...p, email: e.target.value }))
-            }
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-6 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
-        >
-          {saving ? 'Menyimpan...' : 'Simpan'}
-        </button>
-      </form>
+      )}
     </div>
   )
 }

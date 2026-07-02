@@ -28,6 +28,16 @@ export default function CertificatesSection({
             transition={{ delay: i * 0.1 }}
             className="glass-card p-5 hover:border-emerald-400/40 transition-colors block"
           >
+            {cert.image_url && (
+              <div className="aspect-video rounded-lg overflow-hidden mb-4 bg-white/5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={cert.image_url}
+                  alt={cert.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             <h3 className="font-semibold mb-1">{cert.title}</h3>
             <p className="text-white/50 text-sm">{cert.issuer}</p>
             {cert.issue_date && (
