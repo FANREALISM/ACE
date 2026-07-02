@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import AvatarUpload from '@/components/admin/AvatarUpload'
 import type { Profile } from '@/lib/types'
 
 export default function DashboardPage() {
@@ -20,6 +21,20 @@ export default function DashboardPage() {
     loadProfile()
   }, [supabase])
 
+  async function handleAvatarUploaded(url: string) {
+    setProfile((p) => ({ ...p, avatar_url: url }))
+
+    // Simpan langsung ke DB begitu upload selesai, terpisah dari tombol
+    // Simpan utama — supaya foto tidak hilang kalau user lupa klik Simpan.
+    if (profile.id) {
+      await supabase
+        .from('profile')
+        .update({ avatar_url: url, updated_at: new Date().toISOString() })
+        .eq('id', profile.id)
+      setMessage('Foto profil tersimpan.')
+    }
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
@@ -33,6 +48,7 @@ export default function DashboardPage() {
           role: profile.role,
           short_description: profile.short_description,
           long_description: profile.long_description,
+          avatar_url: profile.avatar_url,
           github_url: profile.github_url,
           linkedin_url: profile.linkedin_url,
           email: profile.email,
@@ -64,6 +80,11 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold mb-6">Edit Profil</h1>
       <form onSubmit={handleSave} className="glass-card p-6 space-y-4">
         {message && <p className="text-sm text-cyan-400">{message}</p>}
+
+        <AvatarUpload
+          currentUrl={profile.avatar_url ?? null}
+          onUploaded={handleAvatarUploaded}
+        />
 
         <div>
           <label className="block text-sm text-white/50 mb-1">Nama</label>
@@ -97,6 +118,20 @@ export default function DashboardPage() {
               setProfile((p) => ({ ...p, short_description: e.target.value }))
             }
             rows={3}
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-white/50 mb-1">
+            Deskripsi Lengkap (untuk section &quot;Tentang Saya&quot;)
+          </label>
+          <textarea
+            value={profile.long_description ?? ''}
+            onChange={(e) =>
+              setProfile((p) => ({ ...p, long_description: e.target.value }))
+            }
+            rows={5}
             className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
           />
         </div>

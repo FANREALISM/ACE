@@ -24,6 +24,14 @@ export interface Project {
   created_at: string
 }
 
+export interface AboutSection {
+  id: string
+  title: string
+  content: string
+  display_order: number
+  created_at: string
+}
+
 export interface Certificate {
   id: string
   title: string
