@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-space-grotesk);
+}
+
+body {
+  font-family: var(--font-sans);
+  background: radial-gradient(ellipse at top, #0a0a1a 0%, #000000 70%);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+  }
+
+  .glass-nav {
+    @apply bg-black/40 backdrop-blur-xl border-b border-white/10;
+  }
+
+  .glow-btn {
+    @apply relative overflow-hidden transition-all duration-300;
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
+  }
+
+  .glow-btn:hover {
+    box-shadow: 0 0 30px rgba(34, 211, 238, 0.4);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-purple-400 to-emerald-400;
+  }
+}
