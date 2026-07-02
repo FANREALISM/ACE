@@ -7,6 +7,10 @@
   --font-heading: var(--font-space-grotesk);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-sans);
   background: radial-gradient(ellipse at top, #0a0a1a 0%, #000000 70%);

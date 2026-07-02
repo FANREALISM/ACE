@@ -6,14 +6,14 @@ import type { Project } from '@/lib/types'
 export default function ProjectsGrid({ projects }: { projects: Project[] }) {
   if (projects.length === 0) {
     return (
-      <section id="projects" className="py-24 px-6 text-center">
+      <section id="projects" className="py-24 px-6 text-center scroll-mt-20">
         <p className="text-white/40">Belum ada proyek ditambahkan.</p>
       </section>
     )
   }
 
   return (
-    <section id="projects" className="py-24 px-6 max-w-6xl mx-auto">
+    <section id="projects" className="py-24 px-6 max-w-6xl mx-auto scroll-mt-20">
       <h2 className="text-3xl font-bold mb-12 text-center">
         Proyek <span className="text-gradient">Saya</span>
       </h2>

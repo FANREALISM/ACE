@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import Navbar from '@/components/sections/Navbar'
 import Hero from '@/components/sections/Hero'
+import About from '@/components/sections/About'
 import ProjectsGrid from '@/components/sections/ProjectsGrid'
 import CertificatesSection from '@/components/sections/CertificatesSection'
 import Contact from '@/components/sections/Contact'
@@ -37,8 +37,8 @@ export default async function HomePage() {
 
   return (
     <main>
-      <Navbar />
       <Hero profile={profile} />
+      <About profile={profile} />
       <ProjectsGrid projects={projects} />
       <CertificatesSection certificates={certificates} />
       <Contact profile={profile} />

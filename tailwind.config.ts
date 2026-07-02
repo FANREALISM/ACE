@@ -10,6 +10,7 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)'],
         heading: ['var(--font-space-grotesk)'],
+        mono: ['var(--font-jetbrains-mono)', 'monospace'],
       },
     },
   },

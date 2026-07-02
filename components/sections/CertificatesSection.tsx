@@ -11,7 +11,7 @@ export default function CertificatesSection({
   if (certificates.length === 0) return null
 
   return (
-    <section id="certificates" className="py-24 px-6 max-w-6xl mx-auto">
+    <section id="certificates" className="py-24 px-6 max-w-6xl mx-auto scroll-mt-20">
       <h2 className="text-3xl font-bold mb-12 text-center">
         Sertifikat & <span className="text-gradient">Pencapaian</span>
       </h2>
