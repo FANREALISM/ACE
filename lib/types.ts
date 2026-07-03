@@ -14,7 +14,9 @@ export interface Profile {
 export interface Project {
   id: string
   title: string
+  title_en: string | null
   description: string
+  description_en: string | null
   image_url: string | null
   project_url: string | null
   github_url: string | null
@@ -28,6 +30,9 @@ export interface AboutSection {
   id: string
   title: string
   content: string
+  content_en: string | null
+  icon: string
+  image_url: string | null
   display_order: number
   created_at: string
 }

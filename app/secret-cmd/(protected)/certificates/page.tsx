@@ -111,12 +111,14 @@ export default function CertificatesAdminPage() {
                     setEditing(cert)
                     setShowForm(false)
                   }}
+                  aria-label="Edit sertifikat ini"
                   className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   onClick={() => handleDelete(cert.id)}
+                  aria-label="Hapus sertifikat ini"
                   className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-red-400"
                 >
                   <Trash2 size={16} />

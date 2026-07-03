@@ -101,12 +101,14 @@ export default function ProjectsAdminPage() {
                     setEditing(project)
                     setShowForm(false)
                   }}
+                  aria-label="Edit proyek ini"
                   className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   onClick={() => handleDelete(project.id)}
+                  aria-label="Hapus proyek ini"
                   className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-red-400"
                 >
                   <Trash2 size={16} />

@@ -34,7 +34,13 @@ cp .env.local.example .env.local
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SITE_URL=https://domain-kamu.vercel.app
 ```
+
+**Wajib diisi setelah deploy:** `NEXT_PUBLIC_SITE_URL` dipakai untuk
+canonical URL, Open Graph, `robots.txt`, dan `sitemap.xml`. Kalau tetap
+kosong, semua itu jatuh ke placeholder `your-domain.vercel.app` — link
+preview di WhatsApp/LinkedIn dan hasil Google akan salah/broken.
 
 ### 4. Jalankan secara lokal
 ```bash

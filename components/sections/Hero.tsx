@@ -5,8 +5,18 @@ import Link from 'next/link'
 import { useState } from 'react'
 import type { Profile } from '@/lib/types'
 import { menuItems, type MenuItem } from '@/lib/menuItems'
+import { useLanguage } from '@/lib/i18n/LanguageProvider'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 
-function MenuButton({ item, index }: { item: MenuItem; index: number }) {
+function MenuButton({
+  item,
+  index,
+  label,
+}: {
+  item: MenuItem
+  index: number
+  label: string
+}) {
   const [hovered, setHovered] = useState(false)
 
   const content = (
@@ -31,27 +41,28 @@ function MenuButton({ item, index }: { item: MenuItem; index: number }) {
           hovered ? 'text-cyan-400' : 'text-white/80'
         }`}
       >
-        [ {item.label} ]
+        [ {label} ]
       </motion.span>
     </motion.div>
   )
 
   if (item.isAnchor) {
     return (
-      <a href={item.href} aria-label={item.label}>
+      <a href={item.href} aria-label={label}>
         {content}
       </a>
     )
   }
 
   return (
-    <Link href={item.href} aria-label={item.label}>
+    <Link href={item.href} aria-label={label}>
       {content}
     </Link>
   )
 }
 
 export default function Hero({ profile }: { profile: Profile | null }) {
+  const { t } = useLanguage()
   // Fade + shrink the hero menu as the user scrolls through the hero's own
   // height. Progress is 0 at top, 1 once scrolled past the hero viewport.
   const { scrollY } = useScroll()
@@ -118,7 +129,7 @@ export default function Hero({ profile }: { profile: Profile | null }) {
               {profile?.name ?? 'AFFAN RABBANI'}
             </h1>
             <h2 className="font-mono uppercase text-sm md:text-base tracking-widest text-cyan-400/80">
-              {profile?.role ?? 'SOFTWARE ENGINEER // REKAYASA PERANGKAT LUNAK'}
+              {profile?.role ?? t.hero.roleFallback}
             </h2>
           </div>
         </motion.div>
@@ -126,8 +137,16 @@ export default function Hero({ profile }: { profile: Profile | null }) {
         {/* Right: Vertical menu */}
         <nav aria-label="Main menu" className="flex flex-col">
           {menuItems.map((item, i) => (
-            <MenuButton key={item.label} item={item} index={i} />
+            <MenuButton
+              key={item.key}
+              item={item}
+              index={i}
+              label={t.nav[item.key]}
+            />
           ))}
+          <div className="pt-2 border-t border-white/10 mt-2">
+            <LanguageSwitcher />
+          </div>
         </nav>
       </motion.div>
 
@@ -138,7 +157,7 @@ export default function Hero({ profile }: { profile: Profile | null }) {
         transition={{ duration: 2, repeat: Infinity }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 font-mono text-xs uppercase tracking-widest text-white/30"
       >
-        scroll ↓
+        {t.hero.scrollHint}
       </motion.div>
     </section>
   )

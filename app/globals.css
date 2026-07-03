@@ -20,6 +20,46 @@ h1, h2, h3, h4 {
   font-family: var(--font-heading);
 }
 
+/* Fokus keyboard harus selalu terlihat — jangan pernah outline: none
+   tanpa pengganti. Warna cyan dipilih supaya konsisten dengan aksen
+   situs, bukan default browser biru. */
+:focus-visible {
+  outline: 2px solid rgb(34 211 238 / 0.8);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 200;
+  background: black;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Framer Motion tidak otomatis menghormati prefers-reduced-motion.
+   Ini memaksa semua transisi/animasi jadi instan untuk pengguna yang
+   eksplisit minta motion dikurangi (setting OS/browser). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer components {
   .glass-card {
     @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;

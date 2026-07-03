@@ -5,6 +5,12 @@ import { createClient } from '@/lib/supabase/client'
 import AboutSectionForm from '@/components/admin/AboutSectionForm'
 import type { AboutSection } from '@/lib/types'
 import { Pencil, Trash2, Plus, ArrowUp, ArrowDown } from 'lucide-react'
+import * as Icons from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
+function resolveIcon(name: string): LucideIcon {
+  return (Icons as unknown as Record<string, LucideIcon>)[name] ?? Icons.Cpu
+}
 
 export default function AboutAdminPage() {
   const supabase = createClient()
@@ -121,18 +127,35 @@ export default function AboutAdminPage() {
           {sections.map((section, i) => (
             <div key={section.id} className="glass-card p-4">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="font-mono text-xs uppercase text-cyan-400/70 mb-1">
-                    [ {section.title} ]
-                  </p>
-                  <p className="text-sm text-white/50 line-clamp-2">
-                    {section.content}
-                  </p>
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 shrink-0">
+                    {(() => {
+                      const Icon = resolveIcon(section.icon)
+                      return <Icon size={14} />
+                    })()}
+                  </div>
+                  {section.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={section.image_url}
+                      alt={section.title}
+                      className="w-10 h-10 rounded-lg object-cover border border-white/10 shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono text-xs uppercase text-cyan-400/70 mb-1">
+                      [ {section.title} ]
+                    </p>
+                    <p className="text-sm text-white/50 line-clamp-2">
+                      {section.content}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button
                     onClick={() => handleMove(i, 'up')}
                     disabled={i === 0}
+                    aria-label="Pindahkan paragraf ke atas"
                     className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
                   >
                     <ArrowUp size={16} />
@@ -140,6 +163,7 @@ export default function AboutAdminPage() {
                   <button
                     onClick={() => handleMove(i, 'down')}
                     disabled={i === sections.length - 1}
+                    aria-label="Pindahkan paragraf ke bawah"
                     className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
                   >
                     <ArrowDown size={16} />
@@ -149,12 +173,14 @@ export default function AboutAdminPage() {
                       setEditing(section)
                       setShowForm(false)
                     }}
+                    aria-label="Edit paragraf ini"
                     className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"
                   >
                     <Pencil size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(section.id)}
+                    aria-label="Hapus paragraf ini"
                     className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-red-400"
                   >
                     <Trash2 size={16} />

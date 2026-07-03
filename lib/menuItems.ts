@@ -1,12 +1,15 @@
+import type { Dictionary } from './i18n/types'
+
 export interface MenuItem {
-  label: string
+  key: keyof Dictionary['nav']
   href: string
   isAnchor: boolean
 }
 
 export const menuItems: MenuItem[] = [
-  { label: 'START_JOURNEY', href: '#about', isAnchor: true },
-  { label: 'LOAD_PROJECTS', href: '#projects', isAnchor: true },
-  { label: 'ACHIEVEMENTS', href: '#certificates', isAnchor: true },
-  { label: 'SYSTEM_ADMIN', href: '/secret-cmd', isAnchor: false },
+  { key: 'startJourney', href: '#about', isAnchor: true },
+  { key: 'loadProjects', href: '#projects', isAnchor: true },
+  { key: 'achievements', href: '#certificates', isAnchor: true },
+  { key: 'systemAdmin', href: '/secret-cmd', isAnchor: false },
 ]
+

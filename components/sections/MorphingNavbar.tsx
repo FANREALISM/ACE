@@ -4,8 +4,11 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import type { Profile } from '@/lib/types'
 import { menuItems } from '@/lib/menuItems'
+import { useLanguage } from '@/lib/i18n/LanguageProvider'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 
 export default function MorphingNavbar({ profile }: { profile: Profile | null }) {
+  const { t } = useLanguage()
   const { scrollY } = useScroll()
   // Starts appearing once the Hero menu (fades out 0-500px) is mostly gone.
   const navOpacity = useTransform(scrollY, [350, 550], [0, 1])
@@ -31,26 +34,27 @@ export default function MorphingNavbar({ profile }: { profile: Profile | null })
           </span>
         </div>
 
-        <nav className="flex gap-5 font-mono text-xs uppercase tracking-wider">
+        <nav className="flex items-center gap-5 font-mono text-xs uppercase tracking-wider">
           {menuItems.map((item) =>
             item.isAnchor ? (
               <a
-                key={item.label}
+                key={item.key}
                 href={item.href}
                 className="text-white/60 hover:text-cyan-400 transition-colors"
               >
-                {item.label}
+                {t.nav[item.key]}
               </a>
             ) : (
               <Link
-                key={item.label}
+                key={item.key}
                 href={item.href}
                 className="text-white/60 hover:text-cyan-400 transition-colors"
               >
-                {item.label}
+                {t.nav[item.key]}
               </Link>
             )
           )}
+          <LanguageSwitcher variant="compact" />
         </nav>
       </div>
     </motion.header>

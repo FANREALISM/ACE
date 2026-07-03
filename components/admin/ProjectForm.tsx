@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import type { Project } from '@/lib/types'
 import ImageUpload from './ImageUpload'
+import { translateToEnglish } from '@/lib/translate'
+import { Languages } from 'lucide-react'
 
 interface ProjectFormProps {
   initial?: Partial<Project>
@@ -17,6 +19,9 @@ export default function ProjectForm({
 }: ProjectFormProps) {
   const [title, setTitle] = useState(initial?.title ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
+  const [descriptionEn, setDescriptionEn] = useState(
+    initial?.description_en ?? ''
+  )
   const [imageUrl, setImageUrl] = useState(initial?.image_url ?? '')
   const [projectUrl, setProjectUrl] = useState(initial?.project_url ?? '')
   const [githubUrl, setGithubUrl] = useState(initial?.github_url ?? '')
@@ -24,13 +29,36 @@ export default function ProjectForm({
     initial?.tech_stack?.join(', ') ?? ''
   )
   const [saving, setSaving] = useState(false)
+  const [translating, setTranslating] = useState(false)
+  const [translateError, setTranslateError] = useState<string | null>(null)
+
+  async function handleAutoTranslate() {
+    if (!description.trim()) {
+      setTranslateError('Isi deskripsi Indonesia dulu sebelum translate.')
+      return
+    }
+    setTranslating(true)
+    setTranslateError(null)
+    try {
+      const result = await translateToEnglish(description)
+      setDescriptionEn(result)
+    } catch (err) {
+      setTranslateError(
+        err instanceof Error ? err.message : 'Gagal translate.'
+      )
+    } finally {
+      setTranslating(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
     await onSubmit({
       title,
+      title_en: null,
       description,
+      description_en: descriptionEn || null,
       image_url: imageUrl || null,
       project_url: projectUrl || null,
       github_url: githubUrl || null,
@@ -67,6 +95,33 @@ export default function ProjectForm({
           rows={3}
           className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
         />
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm text-white/50">
+            Deskripsi (English) — opsional
+          </label>
+          <button
+            type="button"
+            onClick={handleAutoTranslate}
+            disabled={translating}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-400/30 text-purple-300 hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+          >
+            <Languages size={13} />
+            {translating ? 'Menerjemahkan...' : 'Auto-translate to EN'}
+          </button>
+        </div>
+        <textarea
+          value={descriptionEn}
+          onChange={(e) => setDescriptionEn(e.target.value)}
+          rows={3}
+          placeholder="Kosong = fallback ke deskripsi Indonesia saat visitor pilih EN"
+          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-purple-400"
+        />
+        {translateError && (
+          <p className="text-xs text-red-400 mt-1">{translateError}</p>
+        )}
       </div>
 
       <div className="space-y-3">
