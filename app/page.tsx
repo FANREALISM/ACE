@@ -1,73 +1,84 @@
-'use client'
+import type { Metadata } from 'next'
+import { createClient } from '@/lib/supabase/server'
+import type { Profile, Project, AboutSection, Certificate } from '@/lib/types'
+import Navbar from '@/components/sections/Navbar'
+import MorphingNavbar from '@/components/sections/MorphingNavbar'
+import Hero from '@/components/sections/Hero'
+import About from '@/components/sections/About'
+import ProjectsGrid from '@/components/sections/ProjectsGrid'
+import CertificatesSection from '@/components/sections/CertificatesSection'
+import Contact from '@/components/sections/Contact'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+async function getData() {
+  const supabase = await createClient()
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
+  const [{ data: profile }, { data: projects }, { data: about }, { data: certificates }] =
+    await Promise.all([
+      supabase.from('profiles').select('*').maybeSingle(),
+      supabase.from('projects').select('*').order('display_order'),
+      supabase.from('about_sections').select('*').order('display_order'),
+      supabase.from('certificates').select('*').order('display_order'),
+    ])
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+  return {
+    profile: (profile as Profile) ?? null,
+    projects: (projects as Project[]) ?? [],
+    about: (about as AboutSection[]) ?? [],
+    certificates: (certificates as Certificate[]) ?? [],
+  }
+}
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+export async function generateMetadata(): Promise<Metadata> {
+  const { profile } = await getData()
 
-    if (error) {
-      setError('Email atau password salah.')
-      setLoading(false)
-      return
-    }
+  const title = profile ? `${profile.name} — ${profile.role}` : 'Portfolio'
+  const description = profile?.short_description ?? 'Personal portfolio website.'
 
-    router.push('/secret-cmd')
-    router.refresh()
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: profile?.avatar_url ? [profile.avatar_url] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: profile?.avatar_url ? [profile.avatar_url] : [],
+    },
+  }
+}
+
+export default async function Home() {
+  const { profile, projects, about, certificates } = await getData()
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: profile?.name,
+    jobTitle: profile?.role,
+    description: profile?.short_description,
+    url: process.env.NEXT_PUBLIC_SITE_URL,
+    sameAs: [profile?.github_url, profile?.linkedin_url].filter(Boolean),
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black px-4">
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-sm p-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl"
-      >
-        <h1 className="text-xl font-semibold text-white mb-6">
-          Admin Access
-        </h1>
-
-        {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
-
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full mb-3 px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full mb-4 px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Memproses...' : 'Login'}
-        </button>
-      </form>
-    </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <Navbar />
+      <MorphingNavbar profile={profile} />
+      <main id="main-content">
+        <Hero profile={profile} />
+        <About sections={about} />
+        <ProjectsGrid projects={projects} />
+        <CertificatesSection certificates={certificates} />
+        <Contact profile={profile} />
+      </main>
+    </>
   )
 }
