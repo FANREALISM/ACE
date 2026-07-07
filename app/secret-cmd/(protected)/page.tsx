@@ -2,198 +2,175 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import AboutSectionForm from '@/components/admin/AboutSectionForm'
-import type { AboutSection } from '@/lib/types'
-import { Pencil, Trash2, Plus, ArrowUp, ArrowDown } from 'lucide-react'
-import * as Icons from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import AvatarUpload from '@/components/admin/AvatarUpload'
+import type { Profile } from '@/lib/types'
 
-function resolveIcon(name: string): LucideIcon {
-  return (Icons as unknown as Record<string, LucideIcon>)[name] ?? Icons.Cpu
+const EMPTY: Omit<Profile, 'id' | 'updated_at'> = {
+  name: '',
+  role: '',
+  short_description: '',
+  long_description: '',
+  avatar_url: null,
+  github_url: '',
+  linkedin_url: '',
+  email: '',
 }
 
-export default function AboutAdminPage() {
+export default function DashboardPage() {
   const supabase = createClient()
-  const [sections, setSections] = useState<AboutSection[]>([])
+  const [profileId, setProfileId] = useState<string | null>(null)
+  const [form, setForm] = useState(EMPTY)
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState<AboutSection | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [savedAt, setSavedAt] = useState<number | null>(null)
 
-  async function loadSections() {
+  async function loadProfile() {
     setLoading(true)
-    const { data } = await supabase
-      .from('about_sections')
-      .select('*')
-      .order('display_order', { ascending: true })
-    setSections(data ?? [])
+    const { data } = await supabase.from('profiles').select('*').maybeSingle()
+    if (data) {
+      setProfileId(data.id)
+      setForm({
+        name: data.name ?? '',
+        role: data.role ?? '',
+        short_description: data.short_description ?? '',
+        long_description: data.long_description ?? '',
+        avatar_url: data.avatar_url ?? null,
+        github_url: data.github_url ?? '',
+        linkedin_url: data.linkedin_url ?? '',
+        email: data.email ?? '',
+      })
+    }
     setLoading(false)
   }
 
   useEffect(() => {
-    loadSections()
+    loadProfile()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handleCreate(
-    data: Omit<AboutSection, 'id' | 'created_at'>
-  ) {
-    const nextOrder =
-      sections.length > 0
-        ? Math.max(...sections.map((s) => s.display_order)) + 1
-        : 0
-    await supabase
-      .from('about_sections')
-      .insert({ ...data, display_order: nextOrder })
-    setShowForm(false)
-    loadSections()
+  function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
+    setForm((f) => ({ ...f, [key]: value }))
   }
 
-  async function handleUpdate(
-    data: Omit<AboutSection, 'id' | 'created_at'>
-  ) {
-    if (!editing) return
-    await supabase
-      .from('about_sections')
-      .update(data)
-      .eq('id', editing.id)
-    setEditing(null)
-    loadSections()
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+
+    if (profileId) {
+      await supabase.from('profiles').update(form).eq('id', profileId)
+    } else {
+      // Belum ada baris profil sama sekali — buat satu. Tabel ini
+      // didesain single-row (ditampilkan lewat .maybeSingle() di halaman
+      // publik), jadi insert cuma terjadi sekali seumur hidup situs.
+      const { data } = await supabase.from('profiles').insert(form).select().maybeSingle()
+      if (data) setProfileId(data.id)
+    }
+
+    setSaving(false)
+    setSavedAt(Date.now())
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Yakin hapus paragraf ini?')) return
-    await supabase.from('about_sections').delete().eq('id', id)
-    loadSections()
-  }
-
-  async function handleMove(index: number, direction: 'up' | 'down') {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    if (targetIndex < 0 || targetIndex >= sections.length) return
-
-    const current = sections[index]
-    const target = sections[targetIndex]
-
-    // Tukar display_order antara dua item bertetangga
-    await Promise.all([
-      supabase
-        .from('about_sections')
-        .update({ display_order: target.display_order })
-        .eq('id', current.id),
-      supabase
-        .from('about_sections')
-        .update({ display_order: current.display_order })
-        .eq('id', target.id),
-    ])
-    loadSections()
+  if (loading) {
+    return <p className="text-white/40">Memuat...</p>
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Kelola Tentang Saya</h1>
-        {!showForm && !editing && (
+      <h1 className="text-2xl font-bold mb-8">Kelola Profil / Hero Section</h1>
+
+      <form onSubmit={handleSave} className="max-w-xl space-y-5">
+        <AvatarUpload
+          currentUrl={form.avatar_url}
+          onUploaded={(url) => update('avatar_url', url)}
+        />
+
+        <div>
+          <label className="block text-sm text-white/50 mb-1">Nama</label>
+          <input
+            value={form.name}
+            onChange={(e) => update('name', e.target.value)}
+            required
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-white/50 mb-1">Role / Jabatan</label>
+          <input
+            value={form.role}
+            onChange={(e) => update('role', e.target.value)}
+            required
+            placeholder="mis. Full-Stack Developer"
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-white/50 mb-1">
+            Deskripsi Singkat (tampil di Hero)
+          </label>
+          <textarea
+            value={form.short_description}
+            onChange={(e) => update('short_description', e.target.value)}
+            required
+            rows={2}
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-white/50 mb-1">
+            Deskripsi Panjang (opsional)
+          </label>
+          <textarea
+            value={form.long_description ?? ''}
+            onChange={(e) => update('long_description', e.target.value)}
+            rows={4}
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-white/50 mb-1">GitHub URL</label>
+          <input
+            value={form.github_url ?? ''}
+            onChange={(e) => update('github_url', e.target.value)}
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-white/50 mb-1">LinkedIn URL</label>
+          <input
+            value={form.linkedin_url ?? ''}
+            onChange={(e) => update('linkedin_url', e.target.value)}
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-white/50 mb-1">Email</label>
+          <input
+            type="email"
+            value={form.email ?? ''}
+            onChange={(e) => update('email', e.target.value)}
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+          />
+        </div>
+
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+            type="submit"
+            disabled={saving}
+            className="py-2 px-6 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
           >
-            <Plus size={16} /> Tambah Paragraf
+            {saving ? 'Menyimpan...' : 'Simpan'}
           </button>
-        )}
-      </div>
-
-      {showForm && (
-        <div className="mb-8">
-          <AboutSectionForm
-            onSubmit={handleCreate}
-            onCancel={() => setShowForm(false)}
-          />
-        </div>
-      )}
-
-      {editing && (
-        <div className="mb-8">
-          <AboutSectionForm
-            initial={editing}
-            onSubmit={handleUpdate}
-            onCancel={() => setEditing(null)}
-          />
-        </div>
-      )}
-
-      {loading ? (
-        <p className="text-white/40">Memuat...</p>
-      ) : (
-        <div className="space-y-3">
-          {sections.map((section, i) => (
-            <div key={section.id} className="glass-card p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 shrink-0">
-                    {(() => {
-                      const Icon = resolveIcon(section.icon)
-                      return <Icon size={14} />
-                    })()}
-                  </div>
-                  {section.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={section.image_url}
-                      alt={section.title}
-                      className="w-10 h-10 rounded-lg object-cover border border-white/10 shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-mono text-xs uppercase text-cyan-400/70 mb-1">
-                      [ {section.title} ]
-                    </p>
-                    <p className="text-sm text-white/50 line-clamp-2">
-                      {section.content}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    onClick={() => handleMove(i, 'up')}
-                    disabled={i === 0}
-                    aria-label="Pindahkan paragraf ke atas"
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
-                  >
-                    <ArrowUp size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleMove(i, 'down')}
-                    disabled={i === sections.length - 1}
-                    aria-label="Pindahkan paragraf ke bawah"
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
-                  >
-                    <ArrowDown size={16} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditing(section)
-                      setShowForm(false)
-                    }}
-                    aria-label="Edit paragraf ini"
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(section.id)}
-                    aria-label="Hapus paragraf ini"
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-red-400"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-          {sections.length === 0 && (
-            <p className="text-white/40">Belum ada paragraf.</p>
+          {savedAt && (
+            <span className="text-sm text-green-400">Tersimpan.</span>
           )}
         </div>
-      )}
+      </form>
     </div>
   )
 }
