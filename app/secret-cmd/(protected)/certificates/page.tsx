@@ -12,13 +12,20 @@ export default function CertificatesAdminPage() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Certificate | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function loadCertificates() {
     setLoading(true)
-    const { data } = await supabase
+    setError(null)
+    const { data, error: loadError } = await supabase
       .from('certificates')
       .select('*')
       .order('display_order', { ascending: true })
+    if (loadError) {
+      setError('Gagal memuat sertifikat: ' + loadError.message)
+      setLoading(false)
+      return
+    }
     setCertificates(data ?? [])
     setLoading(false)
   }
@@ -31,21 +38,44 @@ export default function CertificatesAdminPage() {
   async function handleCreate(
     data: Omit<Certificate, 'id' | 'created_at'>
   ) {
-    await supabase.from('certificates').insert(data)
+    setError(null)
+    const { error: insertError } = await supabase
+      .from('certificates')
+      .insert(data)
+    if (insertError) {
+      setError('Gagal menambah sertifikat: ' + insertError.message)
+      return
+    }
     setShowForm(false)
     loadCertificates()
   }
 
   async function handleUpdate(data: Omit<Certificate, 'id' | 'created_at'>) {
     if (!editing) return
-    await supabase.from('certificates').update(data).eq('id', editing.id)
+    setError(null)
+    const { error: updateError } = await supabase
+      .from('certificates')
+      .update(data)
+      .eq('id', editing.id)
+    if (updateError) {
+      setError('Gagal menyimpan sertifikat: ' + updateError.message)
+      return
+    }
     setEditing(null)
     loadCertificates()
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Yakin hapus sertifikat ini?')) return
-    await supabase.from('certificates').delete().eq('id', id)
+    setError(null)
+    const { error: deleteError } = await supabase
+      .from('certificates')
+      .delete()
+      .eq('id', id)
+    if (deleteError) {
+      setError('Gagal menghapus sertifikat: ' + deleteError.message)
+      return
+    }
     loadCertificates()
   }
 
@@ -62,6 +92,12 @@ export default function CertificatesAdminPage() {
           </button>
         )}
       </div>
+
+      {error && (
+        <p className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3">
+          {error}
+        </p>
+      )}
 
       {showForm && (
         <div className="mb-8">

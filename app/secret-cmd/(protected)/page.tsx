@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import AvatarUpload from '@/components/admin/AvatarUpload'
+import FileUpload from '@/components/admin/FileUpload'
 import type { Profile } from '@/lib/types'
 
 const EMPTY: Omit<Profile, 'id' | 'updated_at'> = {
@@ -14,6 +15,9 @@ const EMPTY: Omit<Profile, 'id' | 'updated_at'> = {
   github_url: '',
   linkedin_url: '',
   email: '',
+  whatsapp_number: '',
+  cv_url: null,
+  is_available: true,
 }
 
 export default function DashboardPage() {
@@ -23,10 +27,20 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function loadProfile() {
     setLoading(true)
-    const { data } = await supabase.from('profiles').select('*').maybeSingle()
+    setError(null)
+    const { data, error: loadError } = await supabase
+      .from('profile')
+      .select('*')
+      .maybeSingle()
+    if (loadError) {
+      setError('Gagal memuat profil: ' + loadError.message)
+      setLoading(false)
+      return
+    }
     if (data) {
       setProfileId(data.id)
       setForm({
@@ -38,6 +52,9 @@ export default function DashboardPage() {
         github_url: data.github_url ?? '',
         linkedin_url: data.linkedin_url ?? '',
         email: data.email ?? '',
+        whatsapp_number: data.whatsapp_number ?? '',
+        cv_url: data.cv_url ?? null,
+        is_available: data.is_available ?? true,
       })
     }
     setLoading(false)
@@ -55,14 +72,33 @@ export default function DashboardPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
+    setError(null)
+    setSavedAt(null)
 
     if (profileId) {
-      await supabase.from('profiles').update(form).eq('id', profileId)
+      const { error: updateError } = await supabase
+        .from('profile')
+        .update(form)
+        .eq('id', profileId)
+      if (updateError) {
+        setError('Gagal menyimpan: ' + updateError.message)
+        setSaving(false)
+        return
+      }
     } else {
       // Belum ada baris profil sama sekali — buat satu. Tabel ini
       // didesain single-row (ditampilkan lewat .maybeSingle() di halaman
       // publik), jadi insert cuma terjadi sekali seumur hidup situs.
-      const { data } = await supabase.from('profiles').insert(form).select().maybeSingle()
+      const { data, error: insertError } = await supabase
+        .from('profile')
+        .insert(form)
+        .select()
+        .maybeSingle()
+      if (insertError) {
+        setError('Gagal membuat profil: ' + insertError.message)
+        setSaving(false)
+        return
+      }
       if (data) setProfileId(data.id)
     }
 
@@ -77,6 +113,12 @@ export default function DashboardPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-8">Kelola Profil / Hero Section</h1>
+
+      {error && (
+        <p className="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3">
+          {error}
+        </p>
+      )}
 
       <form onSubmit={handleSave} className="max-w-xl space-y-5">
         <AvatarUpload
@@ -156,6 +198,54 @@ export default function DashboardPage() {
             onChange={(e) => update('email', e.target.value)}
             className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm text-white/50 mb-1">
+            Nomor WhatsApp
+          </label>
+          <input
+            type="tel"
+            value={form.whatsapp_number ?? ''}
+            onChange={(e) => update('whatsapp_number', e.target.value)}
+            placeholder="6281234567890 (format internasional, tanpa +)"
+            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
+          />
+          <p className="text-xs text-white/30 mt-1">
+            Format: kode negara + nomor, tanpa spasi/tanda +. Contoh: 62
+            untuk Indonesia + nomor tanpa angka 0 di depan → 6281234567890.
+          </p>
+        </div>
+
+        <FileUpload
+          bucket="resume"
+          currentUrl={form.cv_url}
+          onUploaded={(url) => update('cv_url', url)}
+          label="CV / Resume (PDF)"
+        />
+
+        <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-black/40 border border-white/10">
+          <div>
+            <p className="text-sm text-white/80">Available for Work</p>
+            <p className="text-xs text-white/40">
+              Kalau aktif, badge status tampil di Hero section.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.is_available}
+            onClick={() => update('is_available', !form.is_available)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${
+              form.is_available ? 'bg-emerald-500/60' : 'bg-white/10'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                form.is_available ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
         </div>
 
         <div className="flex items-center gap-4">

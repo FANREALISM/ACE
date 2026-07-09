@@ -28,6 +28,7 @@ export default function ProjectForm({
   const [techStack, setTechStack] = useState(
     initial?.tech_stack?.join(', ') ?? ''
   )
+  const [isFeatured, setIsFeatured] = useState(initial?.is_featured ?? false)
   const [saving, setSaving] = useState(false)
   const [translating, setTranslating] = useState(false)
   const [translateError, setTranslateError] = useState<string | null>(null)
@@ -66,7 +67,7 @@ export default function ProjectForm({
         .split(',')
         .map((t) => t.trim())
         .filter(Boolean),
-      is_featured: initial?.is_featured ?? false,
+      is_featured: isFeatured,
       display_order: initial?.display_order ?? 0,
     })
     setSaving(false)
@@ -155,6 +156,19 @@ export default function ProjectForm({
           className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
         />
       </div>
+
+      <label className="flex items-center gap-3 px-4 py-3 rounded-lg bg-black/40 border border-white/10 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={isFeatured}
+          onChange={(e) => setIsFeatured(e.target.checked)}
+          className="w-4 h-4 accent-cyan-400"
+        />
+        <span className="text-sm text-white/70">
+          Tandai sebagai proyek unggulan (tampil lebih dulu + badge di
+          halaman public)
+        </span>
+      </label>
 
       <div className="grid grid-cols-2 gap-4">
         <div>

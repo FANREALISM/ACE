@@ -18,13 +18,20 @@ export default function AboutAdminPage() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<AboutSection | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function loadSections() {
     setLoading(true)
-    const { data } = await supabase
+    setError(null)
+    const { data, error: loadError } = await supabase
       .from('about_sections')
       .select('*')
       .order('display_order', { ascending: true })
+    if (loadError) {
+      setError('Gagal memuat konten About: ' + loadError.message)
+      setLoading(false)
+      return
+    }
     setSections(data ?? [])
     setLoading(false)
   }
@@ -37,13 +44,18 @@ export default function AboutAdminPage() {
   async function handleCreate(
     data: Omit<AboutSection, 'id' | 'created_at'>
   ) {
+    setError(null)
     const nextOrder =
       sections.length > 0
         ? Math.max(...sections.map((s) => s.display_order)) + 1
         : 0
-    await supabase
+    const { error: insertError } = await supabase
       .from('about_sections')
       .insert({ ...data, display_order: nextOrder })
+    if (insertError) {
+      setError('Gagal menambah paragraf: ' + insertError.message)
+      return
+    }
     setShowForm(false)
     loadSections()
   }
@@ -52,17 +64,30 @@ export default function AboutAdminPage() {
     data: Omit<AboutSection, 'id' | 'created_at'>
   ) {
     if (!editing) return
-    await supabase
+    setError(null)
+    const { error: updateError } = await supabase
       .from('about_sections')
       .update(data)
       .eq('id', editing.id)
+    if (updateError) {
+      setError('Gagal menyimpan paragraf: ' + updateError.message)
+      return
+    }
     setEditing(null)
     loadSections()
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Yakin hapus paragraf ini?')) return
-    await supabase.from('about_sections').delete().eq('id', id)
+    setError(null)
+    const { error: deleteError } = await supabase
+      .from('about_sections')
+      .delete()
+      .eq('id', id)
+    if (deleteError) {
+      setError('Gagal menghapus paragraf: ' + deleteError.message)
+      return
+    }
     loadSections()
   }
 
@@ -72,9 +97,10 @@ export default function AboutAdminPage() {
 
     const current = sections[index]
     const target = sections[targetIndex]
+    setError(null)
 
     // Tukar display_order antara dua item bertetangga
-    await Promise.all([
+    const results = await Promise.all([
       supabase
         .from('about_sections')
         .update({ display_order: target.display_order })
@@ -84,6 +110,11 @@ export default function AboutAdminPage() {
         .update({ display_order: current.display_order })
         .eq('id', target.id),
     ])
+    const failed = results.find((r) => r.error)
+    if (failed?.error) {
+      setError('Gagal mengubah urutan: ' + failed.error.message)
+      return
+    }
     loadSections()
   }
 
@@ -100,6 +131,12 @@ export default function AboutAdminPage() {
           </button>
         )}
       </div>
+
+      {error && (
+        <p className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3">
+          {error}
+        </p>
+      )}
 
       {showForm && (
         <div className="mb-8">

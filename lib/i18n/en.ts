@@ -9,11 +9,19 @@ const en: Dictionary = {
     loadProjects: 'LOAD_PROJECTS',
     achievements: 'ACHIEVEMENTS',
     systemAdmin: 'SYSTEM_ADMIN',
+    techStack: 'TECH_STACK',
   },
   hero: {
     roleFallback: 'SOFTWARE ENGINEER',
     ctaButton: 'View My Projects',
     scrollHint: 'scroll ↓',
+    availableBadge: 'Available for work',
+    unavailableBadge: 'Not taking new projects',
+    downloadCv: 'Download CV',
+  },
+  skills: {
+    heading: 'Tech',
+    headingAccent: 'Stack',
   },
   about: {
     label: 'Profile',
@@ -27,6 +35,8 @@ const en: Dictionary = {
     empty: 'No projects added yet.',
     liveDemo: 'Live Demo',
     github: 'GitHub',
+    featured: 'Featured',
+    allFilter: 'All',
   },
   certificates: {
     heading: 'Certificates &',

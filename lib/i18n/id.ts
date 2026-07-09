@@ -9,11 +9,19 @@ const id: Dictionary = {
     loadProjects: 'LOAD_PROJECTS',
     achievements: 'ACHIEVEMENTS',
     systemAdmin: 'SYSTEM_ADMIN',
+    techStack: 'TECH_STACK',
   },
   hero: {
     roleFallback: 'SOFTWARE ENGINEER // REKAYASA PERANGKAT LUNAK',
     ctaButton: 'Lihat Proyek Saya',
     scrollHint: 'scroll ↓',
+    availableBadge: 'Terbuka untuk kerja',
+    unavailableBadge: 'Sedang tidak menerima proyek',
+    downloadCv: 'Unduh CV',
+  },
+  skills: {
+    heading: 'Tech',
+    headingAccent: 'Stack',
   },
   about: {
     label: 'Profile',
@@ -27,6 +35,8 @@ const id: Dictionary = {
     empty: 'Belum ada proyek ditambahkan.',
     liveDemo: 'Live Demo',
     github: 'GitHub',
+    featured: 'Unggulan',
+    allFilter: 'Semua',
   },
   certificates: {
     heading: 'Sertifikat &',

@@ -1,30 +1,39 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import type { Profile, Project, AboutSection, Certificate } from '@/lib/types'
-import Navbar from '@/components/sections/Navbar'
+import type { Profile, Project, AboutSection, Certificate, Skill } from '@/lib/types'
 import MorphingNavbar from '@/components/sections/MorphingNavbar'
 import Hero from '@/components/sections/Hero'
 import About from '@/components/sections/About'
+import SkillsSection from '@/components/sections/SkillsSection'
 import ProjectsGrid from '@/components/sections/ProjectsGrid'
 import CertificatesSection from '@/components/sections/CertificatesSection'
 import Contact from '@/components/sections/Contact'
+import Footer from '@/components/sections/Footer'
+import ScrollProgress from '@/components/ui/ScrollProgress'
 
 async function getData() {
   const supabase = await createClient()
 
-  const [{ data: profile }, { data: projects }, { data: about }, { data: certificates }] =
-    await Promise.all([
-      supabase.from('profiles').select('*').maybeSingle(),
-      supabase.from('projects').select('*').order('display_order'),
-      supabase.from('about_sections').select('*').order('display_order'),
-      supabase.from('certificates').select('*').order('display_order'),
-    ])
+  const [
+    { data: profile },
+    { data: projects },
+    { data: about },
+    { data: certificates },
+    { data: skills },
+  ] = await Promise.all([
+    supabase.from('profile').select('*').maybeSingle(),
+    supabase.from('projects').select('*').order('display_order'),
+    supabase.from('about_sections').select('*').order('display_order'),
+    supabase.from('certificates').select('*').order('display_order'),
+    supabase.from('skills').select('*').order('display_order'),
+  ])
 
   return {
     profile: (profile as Profile) ?? null,
     projects: (projects as Project[]) ?? [],
     about: (about as AboutSection[]) ?? [],
     certificates: (certificates as Certificate[]) ?? [],
+    skills: (skills as Skill[]) ?? [],
   }
 }
 
@@ -52,7 +61,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const { profile, projects, about, certificates } = await getData()
+  const { profile, projects, about, certificates, skills } = await getData()
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -66,19 +75,21 @@ export default async function Home() {
 
   return (
     <>
+      <ScrollProgress />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Navbar />
       <MorphingNavbar profile={profile} />
       <main id="main-content">
         <Hero profile={profile} />
         <About sections={about} />
+        <SkillsSection skills={skills} />
         <ProjectsGrid projects={projects} />
         <CertificatesSection certificates={certificates} />
         <Contact profile={profile} />
       </main>
+      <Footer profile={profile} />
     </>
   )
 }

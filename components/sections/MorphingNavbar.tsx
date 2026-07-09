@@ -55,6 +55,16 @@ export default function MorphingNavbar({ profile }: { profile: Profile | null })
             )
           )}
           <LanguageSwitcher variant="compact" />
+          <button
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('open-command-palette'))
+            }
+            aria-label="Buka command palette"
+            title="Command palette (Ctrl/Cmd + K)"
+            className="hidden sm:flex items-center gap-1.5 text-xs font-mono px-2.5 py-1.5 rounded-lg border border-white/15 text-white/50 hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
+          >
+            <kbd className="text-[10px]">⌘K</kbd>
+          </button>
         </nav>
       </div>
     </motion.header>

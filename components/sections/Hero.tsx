@@ -107,6 +107,25 @@ export default function Hero({ profile }: { profile: Profile | null }) {
           transition={{ duration: 0.6 }}
           className="flex flex-col items-start gap-6"
         >
+          {profile && (
+            <div
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono uppercase tracking-wide ${
+                profile.is_available
+                  ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300'
+                  : 'border-white/15 bg-white/5 text-white/40'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  profile.is_available ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'
+                }`}
+              />
+              {profile.is_available
+                ? t.hero.availableBadge
+                : t.hero.unavailableBadge}
+            </div>
+          )}
+
           {profile?.avatar_url ? (
             <div className="w-28 h-28 md:w-36 md:h-36 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -131,6 +150,18 @@ export default function Hero({ profile }: { profile: Profile | null }) {
             <h2 className="font-mono uppercase text-sm md:text-base tracking-widest text-cyan-400/80">
               {profile?.role ?? t.hero.roleFallback}
             </h2>
+
+            {profile?.cv_url && (
+              <a
+                href={profile.cv_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="glow-btn inline-flex items-center gap-2 mt-4 px-5 py-2 rounded-full bg-purple-500/10 border border-purple-400/30 text-purple-300 text-sm font-medium hover:bg-purple-500/20 transition-colors"
+              >
+                {t.hero.downloadCv}
+              </a>
+            )}
           </div>
         </motion.div>
 

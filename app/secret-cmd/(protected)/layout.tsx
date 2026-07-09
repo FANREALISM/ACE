@@ -28,6 +28,9 @@ export default async function ProtectedLayout({
             <Link href="/secret-cmd/about" className="hover:text-cyan-400">
               About
             </Link>
+            <Link href="/secret-cmd/skills" className="hover:text-cyan-400">
+              Skills
+            </Link>
             <Link href="/secret-cmd/projects" className="hover:text-cyan-400">
               Projects
             </Link>

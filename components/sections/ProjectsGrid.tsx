@@ -13,6 +13,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
   const canHover = useHoverCapable()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [openProject, setOpenProject] = useState<Project | null>(null)
+  const [activeFilter, setActiveFilter] = useState<string | null>(null)
 
   if (projects.length === 0) {
     return (
@@ -22,13 +23,69 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
     )
   }
 
+  // Array.prototype.sort is stable (ES2019+), jadi urutan display_order
+  // di dalam masing-masing grup (featured / non-featured) tetap terjaga —
+  // ini cuma mengangkat grup featured ke atas, bukan re-shuffle semuanya.
+  const sortedProjects = [...projects].sort(
+    (a, b) => Number(b.is_featured) - Number(a.is_featured)
+  )
+
+  // Daftar tech unik dari semua proyek, dipakai sebagai chip filter.
+  // Diurutkan berdasarkan frekuensi (paling sering dipakai muncul duluan)
+  // supaya chip yang paling berguna ada di kiri, bukan urutan alfabet acak.
+  const techCounts = new Map<string, number>()
+  for (const p of projects) {
+    for (const tech of p.tech_stack) {
+      techCounts.set(tech, (techCounts.get(tech) ?? 0) + 1)
+    }
+  }
+  const allTechs = [...techCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([tech]) => tech)
+
+  const filteredProjects = activeFilter
+    ? sortedProjects.filter((p) => p.tech_stack.includes(activeFilter))
+    : sortedProjects
+
   return (
     <section id="projects" className="py-24 px-6 max-w-6xl mx-auto scroll-mt-20">
-      <h2 className="text-3xl font-bold mb-12 text-center">
+      <h2 className="text-3xl font-bold mb-6 text-center">
         {t.projects.heading} <span className="text-gradient">{t.projects.headingAccent}</span>
       </h2>
+
+      {allTechs.length > 1 && (
+        <div className="flex flex-wrap justify-center gap-2 mb-10">
+          <button
+            onClick={() => setActiveFilter(null)}
+            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+              activeFilter === null
+                ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
+                : 'bg-white/5 border-white/10 text-white/50 hover:border-white/30'
+            }`}
+          >
+            {t.projects.allFilter}
+          </button>
+          {allTechs.map((tech) => (
+            <button
+              key={tech}
+              onClick={() => setActiveFilter(activeFilter === tech ? null : tech)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                activeFilter === tech
+                  ? 'bg-purple-500/20 border-purple-400/50 text-purple-300'
+                  : 'bg-white/5 border-white/10 text-white/50 hover:border-white/30'
+              }`}
+            >
+              {tech}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {filteredProjects.length === 0 ? (
+        <p className="text-white/40 text-center">{t.projects.empty}</p>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project, i) => {
+        {filteredProjects.map((project, i) => {
           const desc =
             locale === 'en' && project.description_en
               ? project.description_en
@@ -79,8 +136,13 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                 onMouseEnter={() => canHover && setHoveredId(project.id)}
                 onMouseLeave={() => canHover && setHoveredId(null)}
                 onClick={() => setOpenProject(project)}
-                className="glass-card p-5 hover:border-cyan-400/40 transition-colors group cursor-pointer h-full"
+                className="relative glass-card p-5 hover:border-cyan-400/40 transition-colors group cursor-pointer h-full"
               >
+                {project.is_featured && (
+                  <span className="absolute -top-2 -right-2 z-10 text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold shadow-lg">
+                    {t.projects.featured}
+                  </span>
+                )}
                 {project.image_url && (
                   <div className="aspect-video rounded-lg overflow-hidden mb-4 bg-white/5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -95,12 +157,16 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                 <p className="text-white/60 text-sm mb-4 line-clamp-2">{desc}</p>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {project.tech_stack.map((tech) => (
-                    <span
+                    <button
                       key={tech}
-                      className="text-xs px-2 py-1 rounded-full bg-purple-500/10 border border-purple-400/30 text-purple-300"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveFilter(tech)
+                      }}
+                      className="text-xs px-2 py-1 rounded-full bg-purple-500/10 border border-purple-400/30 text-purple-300 hover:bg-purple-500/20 transition-colors"
                     >
                       {tech}
-                    </span>
+                    </button>
                   ))}
                 </div>
                 <div className="flex gap-4 text-sm">
@@ -132,6 +198,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
           )
         })}
       </div>
+      )}
 
       <Modal open={!!openProject} onClose={() => setOpenProject(null)}>
         {openProject && (

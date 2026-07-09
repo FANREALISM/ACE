@@ -8,6 +8,9 @@ export interface Profile {
   github_url: string | null
   linkedin_url: string | null
   email: string | null
+  whatsapp_number: string | null
+  cv_url: string | null
+  is_available: boolean
   updated_at: string
 }
 
@@ -44,6 +47,15 @@ export interface Certificate {
   issue_date: string | null
   credential_url: string | null
   image_url: string | null
+  display_order: number
+  created_at: string
+}
+
+export interface Skill {
+  id: string
+  name: string
+  icon: string
+  category: string | null
   display_order: number
   created_at: string
 }
