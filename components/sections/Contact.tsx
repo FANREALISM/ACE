@@ -27,11 +27,11 @@ export default function Contact({ profile }: { profile: Profile | null }) {
   }
 
   return (
-    <section id="contact" className="py-24 px-6 text-center scroll-mt-20">
-      <h2 className="text-3xl font-bold mb-8">
+    <section id="contact" className="py-32 px-6 text-center scroll-mt-20">
+      <h2 className="text-3xl font-bold mb-12">
         {t.contact.heading} <span className="text-gradient">{t.contact.headingAccent}</span>
       </h2>
-      <div className="flex justify-center gap-6">
+      <div className="flex justify-center gap-8">
         {whatsappHref && (
           <a
             href={whatsappHref}

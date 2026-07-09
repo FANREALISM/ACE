@@ -48,13 +48,13 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
     : sortedProjects
 
   return (
-    <section id="projects" className="py-24 px-6 max-w-6xl mx-auto scroll-mt-20">
-      <h2 className="text-3xl font-bold mb-6 text-center">
+    <section id="projects" className="py-32 px-6 max-w-6xl mx-auto scroll-mt-20">
+      <h2 className="text-3xl font-bold mb-8 text-center">
         {t.projects.heading} <span className="text-gradient">{t.projects.headingAccent}</span>
       </h2>
 
       {allTechs.length > 1 && (
-        <div className="flex flex-wrap justify-center gap-2 mb-10">
+        <div className="flex flex-wrap justify-center gap-2.5 mb-14">
           <button
             onClick={() => setActiveFilter(null)}
             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
@@ -84,7 +84,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
       {filteredProjects.length === 0 ? (
         <p className="text-white/40 text-center">{t.projects.empty}</p>
       ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredProjects.map((project, i) => {
           const desc =
             locale === 'en' && project.description_en
@@ -136,7 +136,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                 onMouseEnter={() => canHover && setHoveredId(project.id)}
                 onMouseLeave={() => canHover && setHoveredId(null)}
                 onClick={() => setOpenProject(project)}
-                className="relative glass-card p-5 hover:border-cyan-400/40 transition-colors group cursor-pointer h-full"
+                className="relative glass-card p-6 hover:border-cyan-400/40 transition-colors group cursor-pointer h-full"
               >
                 {project.is_featured && (
                   <span className="absolute -top-2 -right-2 z-10 text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold shadow-lg">
@@ -144,7 +144,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                   </span>
                 )}
                 {project.image_url && (
-                  <div className="aspect-video rounded-lg overflow-hidden mb-4 bg-white/5">
+                  <div className="aspect-video rounded-lg overflow-hidden mb-5 bg-white/5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={project.image_url}
@@ -153,9 +153,9 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                     />
                   </div>
                 )}
-                <h3 className="text-lg font-semibold mb-2">{project.title}</h3>
-                <p className="text-white/60 text-sm mb-4 line-clamp-2">{desc}</p>
-                <div className="flex flex-wrap gap-2 mb-4">
+                <h3 className="text-lg font-semibold mb-3">{project.title}</h3>
+                <p className="text-white/60 text-sm mb-5 line-clamp-2">{desc}</p>
+                <div className="flex flex-wrap gap-2 mb-5">
                   {project.tech_stack.map((tech) => (
                     <button
                       key={tech}

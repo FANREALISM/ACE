@@ -11,6 +11,5 @@ export const menuItems: MenuItem[] = [
   { key: 'techStack', href: '#skills', isAnchor: true },
   { key: 'loadProjects', href: '#projects', isAnchor: true },
   { key: 'achievements', href: '#certificates', isAnchor: true },
-  { key: 'systemAdmin', href: '/secret-cmd', isAnchor: false },
 ]
 

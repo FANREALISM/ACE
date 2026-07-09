@@ -5,6 +5,7 @@ export interface Profile {
   short_description: string
   long_description: string | null
   avatar_url: string | null
+  avatar_size: 'sm' | 'md' | 'lg' | 'xl'
   github_url: string | null
   linkedin_url: string | null
   email: string | null

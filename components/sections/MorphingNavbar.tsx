@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import type { Profile } from '@/lib/types'
 import { menuItems } from '@/lib/menuItems'
+import { Menu } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 
@@ -35,35 +36,54 @@ export default function MorphingNavbar({ profile }: { profile: Profile | null })
         </div>
 
         <nav className="flex items-center gap-5 font-mono text-xs uppercase tracking-wider">
-          {menuItems.map((item) =>
-            item.isAnchor ? (
-              <a
-                key={item.key}
-                href={item.href}
-                className="text-white/60 hover:text-cyan-400 transition-colors"
-              >
-                {t.nav[item.key]}
-              </a>
-            ) : (
-              <Link
-                key={item.key}
-                href={item.href}
-                className="text-white/60 hover:text-cyan-400 transition-colors"
-              >
-                {t.nav[item.key]}
-              </Link>
-            )
-          )}
-          <LanguageSwitcher variant="compact" />
+          {/* Link penuh cuma di desktop — di layar sempit, 5 link + pill
+              bahasa + badge ⌘K dijamin overflow horizontal kalau tetap
+              dipaksa satu baris tanpa wrap atau menu mobile. */}
+          <div className="hidden md:flex items-center gap-5">
+            {menuItems.map((item) =>
+              item.isAnchor ? (
+                <a
+                  key={item.key}
+                  href={item.href}
+                  className="text-white/60 hover:text-cyan-400 transition-colors"
+                >
+                  {t.nav[item.key]}
+                </a>
+              ) : (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  className="text-white/60 hover:text-cyan-400 transition-colors"
+                >
+                  {t.nav[item.key]}
+                </Link>
+              )
+            )}
+            <LanguageSwitcher variant="compact" />
+            <button
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent('open-command-palette'))
+              }
+              aria-label="Buka command palette"
+              title="Command palette (Ctrl/Cmd + K)"
+              className="flex items-center gap-1.5 text-xs font-mono px-2.5 py-1.5 rounded-lg border border-white/15 text-white/50 hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
+            >
+              <kbd className="text-[10px]">⌘K</kbd>
+            </button>
+          </div>
+
+          {/* Di mobile, satu tombol menu membuka command palette — yang
+              sudah punya navigasi ke semua section + toggle bahasa + link
+              admin, jadi dipakai ulang sebagai menu mobile alih-alih
+              membangun drawer terpisah. */}
           <button
             onClick={() =>
               window.dispatchEvent(new CustomEvent('open-command-palette'))
             }
-            aria-label="Buka command palette"
-            title="Command palette (Ctrl/Cmd + K)"
-            className="hidden sm:flex items-center gap-1.5 text-xs font-mono px-2.5 py-1.5 rounded-lg border border-white/15 text-white/50 hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
+            aria-label="Buka menu navigasi"
+            className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-white/15 text-white/70 hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
           >
-            <kbd className="text-[10px]">⌘K</kbd>
+            <Menu size={16} />
           </button>
         </nav>
       </div>

@@ -39,11 +39,24 @@ export default function CommandPalette() {
 
   // Cmd+K (Mac) / Ctrl+K (Windows/Linux) membuka palette dari mana saja.
   // Dicegah default browser behaviour-nya (biasanya fokus address bar).
+  //
+  // Ctrl/Cmd+Shift+A langsung lompat ke /secret-cmd tanpa membuka palette
+  // dulu — pengganti tombol SYSTEM_ADMIN yang dihapus dari menu publik.
+  // "A" dipilih untuk "Admin"; kombinasi Shift+A tidak dipakai browser
+  // manapun secara default (beda dari Ctrl+N/T/W yang selalu di-reserve).
   useEffect(() => {
     function handleGlobalKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         setOpen((v) => !v)
+      } else if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === 'a'
+      ) {
+        e.preventDefault()
+        setOpen(false)
+        router.push('/secret-cmd')
       }
     }
     function handleExternalOpen() {
@@ -55,7 +68,7 @@ export default function CommandPalette() {
       window.removeEventListener('keydown', handleGlobalKey)
       window.removeEventListener('open-command-palette', handleExternalOpen)
     }
-  }, [])
+  }, [router])
 
   useEffect(() => {
     if (open) {

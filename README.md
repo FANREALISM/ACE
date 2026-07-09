@@ -56,6 +56,7 @@ jalankan `schema.sql` dulu, baru sisanya sesuai urutan file di bawah.
 - [ ] `supabase/add_whatsapp.sql` — kolom whatsapp_number di profile
 - [ ] `supabase/add_cv_and_availability.sql` — kolom cv_url + is_available, bucket resume
 - [ ] `supabase/add_skills_table.sql` — tabel skills (tech stack section)
+- [ ] `supabase/add_avatar_size.sql` — kolom avatar_size di profile (Small/Medium/Large/XL)
 
 ## Fitur yang sudah dibangun tapi tidak pernah tersambung (baru diperbaiki)
 
@@ -93,7 +94,57 @@ jalankan `schema.sql` dulu, baru sisanya sesuai urutan file di bawah.
   perlu setup tambahan, tidak ada cookie consent banner yang perlu
   ditambahkan (Vercel Analytics tidak pakai cookie).
 
-## Bug regresi yang ditemukan & diperbaiki di revisi ini
+## Revisi "lebih lega" (lebih banyak ruang kosong)
+
+Permintaan sebelumnya ("rapikan UI") ternyata soal kepadatan visual, bukan
+bug — jadi ini murni perubahan spacing, tidak ada logika yang berubah:
+
+- Padding vertikal tiap section: `py-24` → `py-32`
+- Jarak antar card di grid (Projects/Certificates): `gap-6` → `gap-8`
+- Padding dalam card: `p-5` → `p-6`
+- Jarak antar elemen dalam card (gambar/judul/deskripsi/tag): dinaikkan
+  satu step (mis. `mb-2`→`mb-3`, `mb-4`→`mb-5`)
+- Heading margin-bottom tiap section: `mb-12`→`mb-16` (konsisten dengan
+  About yang sudah `mb-16` dari awal)
+- Chip Skills: padding `px-4 py-2.5`→`px-5 py-3`, jarak antar chip
+  `gap-3`→`gap-4`
+- Hero: jarak kolom foto↔menu `gap-12`→`gap-16`, jarak vertikal dalam
+  blok foto `gap-6`→`gap-8`
+
+Yang SENGAJA tidak diubah: bubble preview hover (tetap compact — itu
+popup kecil, bukan konten utama), badge status "Available"/"Unavailable"
+(tetap pill kecil), dan filter chip proyek (tetap rapat karena fungsinya
+sebagai kontrol UI, bukan konten yang perlu ruang bernapas).
+
+## Tombol SYSTEM_ADMIN dihapus dari menu publik
+
+Diganti dua jalur, keduanya lewat keyboard:
+
+- **`Ctrl/Cmd + Shift + A`** — langsung lompat ke `/secret-cmd`, tanpa
+  membuka command palette dulu.
+- **`Ctrl/Cmd + K` → ketik "admin"** — tetap ada sebagai command di
+  palette, untuk yang lupa shortcut langsungnya.
+
+Catatan jujur: ini **security through obscurity**, bukan keamanan
+tambahan yang sesungguhnya — siapa pun yang baca source JS (client-side,
+bisa di-inspect) tetap bisa menemukan route-nya. Yang benar-benar menjaga
+halaman admin tetap Supabase Auth di baliknya (lihat `(protected)/layout.tsx`),
+bukan shortcut ini. Shortcut cuma menghilangkan link yang terlihat di UI,
+bukan menutup akses.
+
+## Ukuran foto profil bisa diatur
+
+Settings admin panel sekarang punya 4 pilihan ukuran foto Hero: Small,
+Medium (default), Large, Extra Large — tidak lagi hardcode di kode.
+Berlaku HANYA untuk foto besar di Hero section; foto kecil di navbar
+(setelah scroll) tetap ukuran tetap `w-8 h-8` karena itu ikon navigasi,
+bukan tampilan utama, dan sengaja tidak dipengaruhi setting ini.
+
+Wajib jalankan `supabase/add_avatar_size.sql` — kolomnya punya CHECK
+constraint (`sm`/`md`/`lg`/`xl` saja) supaya nilai sampah tidak bisa
+tersimpan kalau ada bug di form nanti.
+
+## Bug regresi yang ditemukan & diperbaiki di revisi sebelumnya
 
 - **Font kustom (Inter/Space Grotesk/JetBrains Mono) berhenti dimuat.**
   `tailwind.config.ts` mereferensikan CSS variable `--font-inter` dkk,
@@ -101,6 +152,21 @@ jalankan `schema.sql` dulu, baru sisanya sesuai urutan file di bawah.
   `next/font/google` untuk mendefinisikannya — kemungkinan terhapus tidak
   sengaja di edit sebelumnya. Akibatnya seluruh situs diam-diam fallback
   ke font default browser, bukan crash yang kelihatan. Sudah dikembalikan.
+- **Hero berpotensi memotong konten di layar pendek.** Section Hero pakai
+  `h-screen overflow-hidden` sementara isinya (badge status, foto, nama,
+  role, tombol CV, 6 item menu) ditumpuk satu kolom di mobile —  di layar
+  pendek (iPhone SE, mode landscape) konten yang lebih tinggi dari
+  viewport akan TERPOTONG, bukan bisa di-scroll. Diubah ke `min-h-screen`
+  + layer dekoratif (grid/glow/scanline) dipisah ke container
+  `overflow-hidden`-nya sendiri, supaya efek visual tetap terjaga tanpa
+  ikut memotong konten asli.
+- **Navbar setelah scroll overflow horizontal di mobile.** 5 link nav +
+  pill bahasa + badge ⌘K dipaksa satu baris tanpa wrap dan tanpa menu
+  mobile sama sekali — dijamin overflow di layar <768px. Link penuh
+  sekarang `hidden md:flex`; di mobile muncul satu tombol hamburger yang
+  membuka command palette (sudah ada navigasi ke semua section + toggle
+  bahasa + link admin di dalamnya, jadi dipakai ulang sebagai menu mobile
+  alih-alih membangun drawer terpisah).
 
 ## Perbaikan bug pada revisi ini
 

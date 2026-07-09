@@ -12,6 +12,7 @@ const EMPTY: Omit<Profile, 'id' | 'updated_at'> = {
   short_description: '',
   long_description: '',
   avatar_url: null,
+  avatar_size: 'md',
   github_url: '',
   linkedin_url: '',
   email: '',
@@ -49,6 +50,7 @@ export default function DashboardPage() {
         short_description: data.short_description ?? '',
         long_description: data.long_description ?? '',
         avatar_url: data.avatar_url ?? null,
+        avatar_size: data.avatar_size ?? 'md',
         github_url: data.github_url ?? '',
         linkedin_url: data.linkedin_url ?? '',
         email: data.email ?? '',
@@ -125,6 +127,33 @@ export default function DashboardPage() {
           currentUrl={form.avatar_url}
           onUploaded={(url) => update('avatar_url', url)}
         />
+
+        <div>
+          <label className="block text-sm text-white/50 mb-2">
+            Ukuran Foto di Hero
+          </label>
+          <div className="grid grid-cols-4 gap-2">
+            {(['sm', 'md', 'lg', 'xl'] as const).map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => update('avatar_size', size)}
+                aria-pressed={form.avatar_size === size}
+                className={`py-2 rounded-lg border text-sm font-mono uppercase transition-colors ${
+                  form.avatar_size === size
+                    ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
+                    : 'bg-black/40 border-white/10 text-white/50 hover:border-white/30'
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-white/30 mt-1">
+            Small / Medium (default) / Large / Extra Large. Berlaku untuk
+            foto di Hero section, bukan foto kecil di navbar.
+          </p>
+        </div>
 
         <div>
           <label className="block text-sm text-white/50 mb-1">Nama</label>

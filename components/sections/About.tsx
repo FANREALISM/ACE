@@ -14,7 +14,7 @@ function resolveIcon(name: string): LucideIcon {
 export default function About({ sections }: { sections: AboutSection[] }) {
   const { t, locale } = useLanguage()
   return (
-    <section id="about" className="py-24 px-6 max-w-5xl mx-auto scroll-mt-20">
+    <section id="about" className="py-32 px-6 max-w-5xl mx-auto scroll-mt-20">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -33,7 +33,7 @@ export default function About({ sections }: { sections: AboutSection[] }) {
       {sections.length === 0 ? (
         <p className="text-white/40">{t.about.empty}</p>
       ) : (
-        <div className="space-y-16">
+        <div className="space-y-20">
           {sections.map((section, i) => {
             const Icon = resolveIcon(section.icon)
             const reversed = i % 2 === 1

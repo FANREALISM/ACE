@@ -21,11 +21,11 @@ export default function CertificatesSection({
   if (certificates.length === 0) return null
 
   return (
-    <section id="certificates" className="py-24 px-6 max-w-6xl mx-auto scroll-mt-20">
-      <h2 className="text-3xl font-bold mb-12 text-center">
+    <section id="certificates" className="py-32 px-6 max-w-6xl mx-auto scroll-mt-20">
+      <h2 className="text-3xl font-bold mb-16 text-center">
         {t.certificates.heading} <span className="text-gradient">{t.certificates.headingAccent}</span>
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {certificates.map((cert, i) => (
           <div key={cert.id} className="relative">
             <AnimatePresence>
@@ -66,10 +66,10 @@ export default function CertificatesSection({
               onMouseEnter={() => canHover && setHoveredId(cert.id)}
               onMouseLeave={() => canHover && setHoveredId(null)}
               onClick={() => setOpenCert(cert)}
-              className="glass-card p-5 hover:border-emerald-400/40 transition-colors cursor-pointer h-full"
+              className="glass-card p-6 hover:border-emerald-400/40 transition-colors cursor-pointer h-full"
             >
               {cert.image_url && (
-                <div className="aspect-video rounded-lg overflow-hidden mb-4 bg-white/5">
+                <div className="aspect-video rounded-lg overflow-hidden mb-5 bg-white/5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={cert.image_url}
@@ -78,7 +78,7 @@ export default function CertificatesSection({
                   />
                 </div>
               )}
-              <h3 className="font-semibold mb-1">{cert.title}</h3>
+              <h3 className="font-semibold mb-2">{cert.title}</h3>
               <p className="text-white/50 text-sm">{cert.issuer}</p>
               {cert.issue_date && (
                 <p className="text-white/30 text-xs mt-2">

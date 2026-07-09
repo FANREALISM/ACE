@@ -26,7 +26,7 @@ function MenuButton({
       transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
-      className="group relative flex items-center gap-4 py-3 cursor-pointer select-none"
+      className="group relative flex items-center gap-4 py-4 cursor-pointer select-none"
     >
       <motion.span
         animate={{ opacity: hovered ? 1 : 0, scale: hovered ? 1 : 0.6 }}
@@ -63,6 +63,18 @@ function MenuButton({
 
 export default function Hero({ profile }: { profile: Profile | null }) {
   const { t } = useLanguage()
+
+  // Peta ukuran foto profil — dikontrol dari Settings admin panel.
+  // Fallback ke 'md' kalau profile null, avatar_size belum diisi, atau
+  // migrasi add_avatar_size.sql belum dijalankan (kolom belum ada).
+  const AVATAR_SIZES: Record<string, string> = {
+    sm: 'w-20 h-20 md:w-28 md:h-28',
+    md: 'w-28 h-28 md:w-36 md:h-36',
+    lg: 'w-36 h-36 md:w-44 md:h-44',
+    xl: 'w-44 h-44 md:w-52 md:h-52',
+  }
+  const avatarSizeClass = AVATAR_SIZES[profile?.avatar_size ?? 'md'] ?? AVATAR_SIZES.md
+
   // Fade + shrink the hero menu as the user scrolls through the hero's own
   // height. Progress is 0 at top, 1 once scrolled past the hero viewport.
   const { scrollY } = useScroll()
@@ -70,42 +82,48 @@ export default function Hero({ profile }: { profile: Profile | null }) {
   const heroY = useTransform(scrollY, [0, 500], [0, -40])
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-black flex items-center">
-      {/* Scanline / grain overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.05]"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(0deg, white 0px, transparent 1px, transparent 3px)',
-        }}
-      />
+    <section className="relative min-h-screen w-full bg-black flex items-center py-28 md:py-24">
+      {/* Semua layer dekoratif dibungkus overflow-hidden-nya sendiri —
+          supaya blur circle yang sengaja "meluber" (translate-x-32) tidak
+          memicu horizontal scroll, TANPA ikut memotong konten asli kalau
+          section ini jadi lebih tinggi dari viewport di layar pendek. */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Scanline / grain overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.05]"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(0deg, white 0px, transparent 1px, transparent 3px)',
+          }}
+        />
 
-      {/* Grid lines background */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }}
-      />
+        {/* Grid lines background */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+          }}
+        />
 
-      {/* Radial glow */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[130px]" />
-        <div className="absolute w-[500px] h-[500px] rounded-full bg-purple-500/10 blur-[110px] translate-x-32" />
+        {/* Radial glow */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[130px]" />
+          <div className="absolute w-[500px] h-[500px] rounded-full bg-purple-500/10 blur-[110px] translate-x-32" />
+        </div>
       </div>
 
       <motion.div
         style={{ opacity: heroOpacity, y: heroY }}
-        className="relative z-10 w-full max-w-6xl mx-auto px-6 md:px-12 grid md:grid-cols-2 gap-12 items-center"
+        className="relative z-10 w-full max-w-6xl mx-auto px-6 md:px-12 grid md:grid-cols-2 gap-16 items-center"
       >
         {/* Left: Photo + Title block */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col items-start gap-6"
+          className="flex flex-col items-start gap-8"
         >
           {profile && (
             <div
@@ -127,7 +145,9 @@ export default function Hero({ profile }: { profile: Profile | null }) {
           )}
 
           {profile?.avatar_url ? (
-            <div className="w-28 h-28 md:w-36 md:h-36 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
+            <div
+              className={`${avatarSizeClass} rounded-2xl overflow-hidden border border-white/10 bg-white/5`}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={profile.avatar_url}
@@ -136,7 +156,9 @@ export default function Hero({ profile }: { profile: Profile | null }) {
               />
             </div>
           ) : (
-            <div className="w-28 h-28 md:w-36 md:h-36 rounded-2xl border border-dashed border-white/15 bg-white/5 flex items-center justify-center">
+            <div
+              className={`${avatarSizeClass} rounded-2xl border border-dashed border-white/15 bg-white/5 flex items-center justify-center`}
+            >
               <span className="font-mono text-xs text-white/30 uppercase text-center px-2">
                 No Photo
               </span>
