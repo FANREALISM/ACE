@@ -17,6 +17,34 @@ export default function CertificatesSection({
   const canHover = useHoverCapable()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [openCert, setOpenCert] = useState<Certificate | null>(null)
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
+
+  // Sama seperti ProjectsGrid.tsx: posisi dihitung sebagai angka piksel
+  // polos (position: fixed, left/bottom), bukan CSS transform, supaya
+  // tidak tumpang tindih dengan transform yang dikelola Framer Motion
+  // untuk animasi enter/exit bubble ini.
+  const BUBBLE_WIDTH = 320
+  const BUBBLE_MARGIN = 12
+
+  function bubbleStyle(x: number, y: number): React.CSSProperties {
+    const left = Math.min(
+      Math.max(x - BUBBLE_WIDTH / 2, BUBBLE_MARGIN),
+      window.innerWidth - BUBBLE_WIDTH - BUBBLE_MARGIN
+    )
+    // Default: bubble muncul DI ATAS kursor (anchor lewat `bottom`, bukan
+    // `top`, supaya tinggi bubble yang variabel — tergantung panjang
+    // deskripsi — tumbuh ke atas dari titik kursor, bukan ke bawah
+    // menutupi kursor). Kalau kursor terlalu dekat ke puncak viewport,
+    // `bottom` jadi sangat besar dan bubble akan terdorong ke luar layar
+    // ke atas — di situasi itu, flip ke bawah kursor pakai `top` sebagai
+    // gantinya.
+    const MIN_ROOM_ABOVE = 260
+    if (y < MIN_ROOM_ABOVE) {
+      return { position: 'fixed', left, top: y + 20, width: BUBBLE_WIDTH }
+    }
+    const bottom = window.innerHeight - y + 20
+    return { position: 'fixed', left, bottom, width: BUBBLE_WIDTH }
+  }
 
   if (certificates.length === 0) return null
 
@@ -28,6 +56,8 @@ export default function CertificatesSection({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {certificates.map((cert, i) => (
           <div key={cert.id} className="relative">
+            {/* Bubble preview — fixed & ngikutin kursor, bukan nempel di
+                tengah card. Diupdate lewat onMouseMove di card di bawah. */}
             <AnimatePresence>
               {canHover && hoveredId === cert.id && (
                 <motion.div
@@ -35,11 +65,12 @@ export default function CertificatesSection({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.96 }}
                   transition={{ duration: 0.15 }}
-                  className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 -translate-y-full z-20 w-60"
+                  style={bubbleStyle(cursorPos.x, cursorPos.y)}
+                  className="pointer-events-none z-20"
                 >
-                  <div className="glass-card p-3 shadow-xl border-emerald-400/30">
+                  <div className="glass-card p-4 shadow-xl border-emerald-400/30">
                     {cert.image_url && (
-                      <div className="aspect-video rounded-lg overflow-hidden mb-2 bg-white/5">
+                      <div className="aspect-video rounded-lg overflow-hidden mb-3 bg-white/5">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={cert.image_url}
@@ -48,12 +79,11 @@ export default function CertificatesSection({
                         />
                       </div>
                     )}
-                    <p className="text-sm font-semibold text-white/90 truncate">
+                    <p className="text-base font-semibold text-white/90 truncate">
                       {cert.title}
                     </p>
-                    <p className="text-xs text-white/50 truncate">{cert.issuer}</p>
+                    <p className="text-sm text-white/50 truncate mt-1">{cert.issuer}</p>
                   </div>
-                  <div className="w-3 h-3 bg-white/5 border-r border-b border-white/10 rotate-45 -mt-1.5 mx-auto" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -65,6 +95,9 @@ export default function CertificatesSection({
               transition={{ delay: i * 0.1 }}
               onMouseEnter={() => canHover && setHoveredId(cert.id)}
               onMouseLeave={() => canHover && setHoveredId(null)}
+              onMouseMove={(e) =>
+                canHover && setCursorPos({ x: e.clientX, y: e.clientY })
+              }
               onClick={() => setOpenCert(cert)}
               className="glass-card p-6 hover:border-emerald-400/40 transition-colors cursor-pointer h-full"
             >

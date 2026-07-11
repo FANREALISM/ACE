@@ -14,6 +14,37 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [openProject, setOpenProject] = useState<Project | null>(null)
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
+
+  // Lebar bubble tetap (match w-80 di className) — dipakai untuk hitung
+  // posisi kiri manual di bawah, BUKAN pakai CSS transform:translateX(-50%)
+  // untuk centering. Alasannya: Framer Motion menulis langsung ke
+  // elemen.style.transform tiap frame buat animasi enter/exit (y, scale),
+  // jadi transform statis lain yang ditaruh di style prop akan
+  // tumpang-tindih/keprediksi hasilnya. Hitung "left" sebagai angka
+  // piksel polos menghindari itu sama sekali.
+  const BUBBLE_WIDTH = 320
+  const BUBBLE_MARGIN = 12
+
+  function bubbleStyle(x: number, y: number): React.CSSProperties {
+    const left = Math.min(
+      Math.max(x - BUBBLE_WIDTH / 2, BUBBLE_MARGIN),
+      window.innerWidth - BUBBLE_WIDTH - BUBBLE_MARGIN
+    )
+    // Default: bubble muncul DI ATAS kursor (anchor lewat `bottom`, bukan
+    // `top`, supaya tinggi bubble yang variabel — tergantung panjang
+    // deskripsi — tumbuh ke atas dari titik kursor, bukan ke bawah
+    // menutupi kursor). Kalau kursor terlalu dekat ke puncak viewport,
+    // `bottom` jadi sangat besar dan bubble akan terdorong ke luar layar
+    // ke atas — di situasi itu, flip ke bawah kursor pakai `top` sebagai
+    // gantinya.
+    const MIN_ROOM_ABOVE = 260
+    if (y < MIN_ROOM_ABOVE) {
+      return { position: 'fixed', left, top: y + 20, width: BUBBLE_WIDTH }
+    }
+    const bottom = window.innerHeight - y + 20
+    return { position: 'fixed', left, bottom, width: BUBBLE_WIDTH }
+  }
 
   if (projects.length === 0) {
     return (
@@ -95,7 +126,9 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
             <div key={project.id} className="relative">
               {/* Hover preview bubble — desktop-only (see useHoverCapable).
                   pointer-events-none so it never intercepts the click that
-                  opens the modal underneath it. */}
+                  opens the modal underneath it. Posisinya fixed & ngikutin
+                  kursor (bukan nempel di tengah card), diupdate lewat
+                  onMouseMove di card di bawah. */}
               <AnimatePresence>
                 {canHover && hoveredId === project.id && (
                   <motion.div
@@ -103,11 +136,12 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 -translate-y-full z-20 w-64"
+                    style={bubbleStyle(cursorPos.x, cursorPos.y)}
+                    className="pointer-events-none z-20"
                   >
-                    <div className="glass-card p-3 shadow-xl border-cyan-400/30">
+                    <div className="glass-card p-4 shadow-xl border-cyan-400/30">
                       {project.image_url && (
-                        <div className="aspect-video rounded-lg overflow-hidden mb-2 bg-white/5">
+                        <div className="aspect-video rounded-lg overflow-hidden mb-3 bg-white/5">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={project.image_url}
@@ -116,14 +150,13 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                           />
                         </div>
                       )}
-                      <p className="text-sm font-semibold text-white/90 truncate">
+                      <p className="text-base font-semibold text-white/90 truncate">
                         {project.title}
                       </p>
-                      <p className="text-xs text-white/50 line-clamp-2 mt-1">
+                      <p className="text-sm text-white/50 line-clamp-3 mt-1.5">
                         {desc}
                       </p>
                     </div>
-                    <div className="w-3 h-3 bg-white/5 border-r border-b border-white/10 rotate-45 -mt-1.5 mx-auto" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -135,11 +168,20 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 onMouseEnter={() => canHover && setHoveredId(project.id)}
                 onMouseLeave={() => canHover && setHoveredId(null)}
+                onMouseMove={(e) =>
+                  canHover && setCursorPos({ x: e.clientX, y: e.clientY })
+                }
                 onClick={() => setOpenProject(project)}
                 className="relative glass-card p-6 hover:border-cyan-400/40 transition-colors group cursor-pointer h-full"
               >
                 {project.is_featured && (
-                  <span className="absolute -top-2 -right-2 z-10 text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold shadow-lg">
+                  <span
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(to right, var(--gradient-from), var(--gradient-to))',
+                    }}
+                    className="absolute -top-2 -right-2 z-10 text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-full text-black font-bold shadow-lg"
+                  >
                     {t.projects.featured}
                   </span>
                 )}

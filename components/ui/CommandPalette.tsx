@@ -12,10 +12,13 @@ import {
   Mail,
   ShieldCheck,
   Languages,
+  Sun,
+  Moon,
   CornerDownLeft,
   type LucideIcon,
 } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
+import { useTheme } from '@/lib/theme/ThemeProvider'
 
 interface Command {
   id: string
@@ -32,6 +35,7 @@ function scrollToId(id: string) {
 export default function CommandPalette() {
   const router = useRouter()
   const { t, toggleLocale, locale } = useLanguage()
+  const { theme, toggleTheme } = useTheme()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(0)
@@ -130,6 +134,14 @@ export default function CommandPalette() {
         run: () => toggleLocale(),
       },
       {
+        id: 'theme',
+        label:
+          theme === 'dark' ? 'Switch to Light theme' : 'Ganti ke Dark theme',
+        hint: 'Action',
+        icon: theme === 'dark' ? Sun : Moon,
+        run: () => toggleTheme(),
+      },
+      {
         id: 'admin',
         label: t.nav.systemAdmin,
         hint: 'Route',
@@ -137,7 +149,7 @@ export default function CommandPalette() {
         run: () => router.push('/secret-cmd'),
       },
     ],
-    [t, locale, toggleLocale, router]
+    [t, locale, toggleLocale, theme, toggleTheme, router]
   )
 
   const filtered = commands.filter((c) =>
@@ -189,7 +201,8 @@ export default function CommandPalette() {
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
-            className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#0a0a12] shadow-2xl overflow-hidden"
+            style={{ backgroundColor: 'var(--panel-bg)' }}
+            className="relative w-full max-w-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
           >
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
               <Search size={16} className="text-white/40 shrink-0" />

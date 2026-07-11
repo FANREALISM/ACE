@@ -7,6 +7,7 @@ import type { Profile } from '@/lib/types'
 import { menuItems, type MenuItem } from '@/lib/menuItems'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 function MenuButton({
   item,
@@ -197,8 +198,9 @@ export default function Hero({ profile }: { profile: Profile | null }) {
               label={t.nav[item.key]}
             />
           ))}
-          <div className="pt-2 border-t border-white/10 mt-2">
+          <div className="pt-2 border-t border-white/10 mt-2 flex items-center gap-4">
             <LanguageSwitcher />
+            <ThemeToggle />
           </div>
         </nav>
       </motion.div>

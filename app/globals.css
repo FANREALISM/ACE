@@ -5,6 +5,25 @@
 :root {
   --font-sans: var(--font-inter);
   --font-heading: var(--font-space-grotesk);
+
+  /* Token dasar untuk komponen bersama (glass-card, glass-nav, dst).
+     Default = dark theme (identitas asli situs). Di-override di bawah
+     untuk [data-theme="light"]. */
+  --surface-fill: rgb(255 255 255 / 0.05);
+  --surface-border: rgb(255 255 255 / 0.10);
+  --nav-fill: rgb(0 0 0 / 0.40);
+  --accent-glow: rgba(34, 211, 238, 0.15);
+  --accent-glow-hover: rgba(34, 211, 238, 0.4);
+  --gradient-from: #22d3ee;
+  --gradient-via: #c084fc;
+  --gradient-to: #34d399;
+
+  /* Panel Modal/CommandPalette dan chrome kecil (tombol close, dst) —
+     sebelumnya hardcode bg-[#0a0a12] dan bg-black/40 langsung di JSX,
+     dipindah ke var supaya bisa ikut tema tanpa collision dengan
+     bg-black/40 yang juga dipakai form admin (yang sengaja tetap gelap). */
+  --panel-bg: #0a0a12;
+  --chrome-fill: rgb(0 0 0 / 0.4);
 }
 
 html {
@@ -14,7 +33,118 @@ html {
 body {
   font-family: var(--font-sans);
   background: radial-gradient(ellipse at top, #0a0a1a 0%, #000000 70%);
+  transition: background 0.3s ease, color 0.3s ease;
 }
+
+/* ============================================================
+   LIGHT THEME — putih + merah.
+   Semua warna aksen (cyan/purple/emerald) dipetakan ke keluarga merah,
+   bukan dipertahankan multi-hue, supaya identitas "putih merah" konsisten
+   di seluruh situs, bukan cuma background yang berubah.
+
+   Strategi: override berdasarkan attribute selector [data-theme="light"]
+   pada <html>, menyasar CLASS TAILWIND YANG BENAR-BENAR DIPAKAI (dicek
+   lewat grep ke source, bukan ditebak). Specificity gabungan attribute +
+   class (0,2,0) otomatis menang atas utility Tailwind biasa (0,1,0)
+   tanpa perlu !important di sebagian besar aturan.
+
+   SENGAJA TIDAK di-override: bg-black/70 (scrim backdrop Modal dan
+   Command Palette) — overlay peredup background itu konvensinya tetap
+   gelap di kedua tema, bukan soal warna tema.
+   ============================================================ */
+[data-theme='light'] {
+  --surface-fill: rgb(0 0 0 / 0.025);
+  --surface-border: rgb(0 0 0 / 0.10);
+  --nav-fill: rgb(255 255 255 / 0.70);
+  --accent-glow: rgba(220, 38, 38, 0.12);
+  --accent-glow-hover: rgba(220, 38, 38, 0.3);
+  --gradient-from: #dc2626;
+  --gradient-via: #e11d48;
+  --gradient-to: #b91c1c;
+
+  --panel-bg: #ffffff;
+  --chrome-fill: rgb(0 0 0 / 0.06);
+}
+
+[data-theme='light'] body {
+  background: #ffffff;
+}
+
+/* Teks & background dasar */
+[data-theme='light'] .text-white { color: #18181b; }
+[data-theme='light'] .text-white\/90 { color: rgb(24 24 27 / 0.90); }
+[data-theme='light'] .text-white\/80 { color: rgb(24 24 27 / 0.80); }
+[data-theme='light'] .text-white\/70 { color: rgb(24 24 27 / 0.72); }
+[data-theme='light'] .text-white\/60 { color: rgb(24 24 27 / 0.62); }
+[data-theme='light'] .text-white\/50 { color: rgb(24 24 27 / 0.52); }
+[data-theme='light'] .text-white\/40 { color: rgb(24 24 27 / 0.42); }
+[data-theme='light'] .text-white\/30 { color: rgb(24 24 27 / 0.35); }
+[data-theme='light'] .text-white\/25 { color: rgb(24 24 27 / 0.30); }
+
+[data-theme='light'] .bg-black { background-color: #ffffff; }
+[data-theme='light'] .bg-white\/5 { background-color: rgb(0 0 0 / 0.025); }
+[data-theme='light'] .bg-white\/30 { background-color: rgb(0 0 0 / 0.15); }
+
+[data-theme='light'] .border-white\/10 { border-color: rgb(0 0 0 / 0.10); }
+[data-theme='light'] .border-white\/15 { border-color: rgb(0 0 0 / 0.12); }
+[data-theme='light'] .border-white\/20 { border-color: rgb(0 0 0 / 0.15); }
+[data-theme='light'] .border-white\/30 { border-color: rgb(0 0 0 / 0.20); }
+
+/* Aksen cyan → merah (peran: link utama, highlight, focus) */
+[data-theme='light'] .text-cyan-300 { color: #b91c1c; }
+[data-theme='light'] .text-cyan-400 { color: #dc2626; }
+[data-theme='light'] .text-cyan-400\/60 { color: rgb(220 38 38 / 0.7); }
+[data-theme='light'] .text-cyan-400\/80 { color: rgb(220 38 38 / 0.85); }
+[data-theme='light'] .bg-cyan-400 { background-color: #dc2626; }
+[data-theme='light'] .bg-cyan-500\/10 { background-color: rgb(220 38 38 / 0.08); }
+[data-theme='light'] .bg-cyan-500\/20 { background-color: rgb(220 38 38 / 0.12); }
+[data-theme='light'] .bg-cyan-500\/30 { background-color: rgb(220 38 38 / 0.18); }
+[data-theme='light'] .border-cyan-400\/30 { border-color: rgb(220 38 38 / 0.35); }
+[data-theme='light'] .border-cyan-400\/40 { border-color: rgb(220 38 38 / 0.45); }
+[data-theme='light'] .border-cyan-400\/50 { border-color: rgb(220 38 38 / 0.55); }
+
+/* Aksen purple → rose-merah (peran: tag/badge sekunder) */
+[data-theme='light'] .text-purple-300 { color: #be123c; }
+[data-theme='light'] .bg-purple-400 { background-color: #e11d48; }
+[data-theme='light'] .bg-purple-500\/10 { background-color: rgb(225 29 72 / 0.08); }
+[data-theme='light'] .bg-purple-500\/20 { background-color: rgb(225 29 72 / 0.12); }
+[data-theme='light'] .border-purple-400\/30 { border-color: rgb(225 29 72 / 0.35); }
+[data-theme='light'] .border-purple-400\/50 { border-color: rgb(225 29 72 / 0.5); }
+
+/* Aksen emerald → merah tua (peran: sertifikat, status available) */
+[data-theme='light'] .text-emerald-300 { color: #991b1b; }
+[data-theme='light'] .bg-emerald-400 { background-color: #b91c1c; }
+[data-theme='light'] .bg-emerald-500\/10 { background-color: rgb(185 28 28 / 0.08); }
+[data-theme='light'] .bg-emerald-500\/20 { background-color: rgb(185 28 28 / 0.12); }
+[data-theme='light'] .bg-emerald-500\/30 { background-color: rgb(185 28 28 / 0.18); }
+[data-theme='light'] .border-emerald-400\/30 { border-color: rgb(185 28 28 / 0.35); }
+[data-theme='light'] .border-emerald-400\/40 { border-color: rgb(185 28 28 / 0.45); }
+
+/* Error text (dipakai admin form, tapi juga muncul di beberapa tempat
+   publik) — tetap merah di kedua tema, cuma digelapkan supaya kontras
+   cukup di atas putih (text-red-400 terlalu terang untuk WCAG di bg
+   putih). */
+[data-theme='light'] .text-red-400\/80 { color: rgb(185 28 28 / 0.9); }
+
+/* Varian pseudo-class Tailwind (placeholder:, hover:, dst) compile ke
+   selector berbeda dari class dasarnya — tidak otomatis ke-cover oleh
+   override di atas, jadi ditangani terpisah kalau dipakai. */
+[data-theme='light'] .placeholder\:text-white\/30::placeholder { color: rgb(24 24 27 / 0.35); }
+
+/* hover: / group-hover: — compile ke selector :hover terpisah, tidak
+   ke-cover otomatis oleh override base class di atas. */
+[data-theme='light'] .hover\:text-white:hover { color: #18181b; }
+[data-theme='light'] .hover\:text-cyan-300:hover { color: #b91c1c; }
+[data-theme='light'] .hover\:text-cyan-400:hover { color: #dc2626; }
+[data-theme='light'] .group:hover .group-hover\:text-purple-300 { color: #be123c; }
+[data-theme='light'] .hover\:bg-white\/5:hover { background-color: rgb(0 0 0 / 0.03); }
+[data-theme='light'] .hover\:bg-cyan-500\/30:hover { background-color: rgb(220 38 38 / 0.2); }
+[data-theme='light'] .hover\:bg-purple-500\/20:hover { background-color: rgb(225 29 72 / 0.15); }
+[data-theme='light'] .hover\:bg-emerald-500\/30:hover { background-color: rgb(185 28 28 / 0.2); }
+[data-theme='light'] .hover\:border-white\/30:hover { border-color: rgb(0 0 0 / 0.25); }
+[data-theme='light'] .hover\:border-cyan-400\/40:hover { border-color: rgb(220 38 38 / 0.45); }
+[data-theme='light'] .hover\:border-cyan-400\/50:hover { border-color: rgb(220 38 38 / 0.55); }
+[data-theme='light'] .hover\:border-emerald-400\/40:hover { border-color: rgb(185 28 28 / 0.45); }
 
 h1, h2, h3, h4 {
   font-family: var(--font-heading);
@@ -62,23 +192,33 @@ h1, h2, h3, h4 {
 
 @layer components {
   .glass-card {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+    @apply backdrop-blur-xl border rounded-2xl;
+    background-color: var(--surface-fill);
+    border-color: var(--surface-border);
   }
 
   .glass-nav {
-    @apply bg-black/40 backdrop-blur-xl border-b border-white/10;
+    @apply backdrop-blur-xl border-b;
+    background-color: var(--nav-fill);
+    border-color: var(--surface-border);
   }
 
   .glow-btn {
     @apply relative overflow-hidden transition-all duration-300;
-    box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
+    box-shadow: 0 0 20px var(--accent-glow);
   }
 
   .glow-btn:hover {
-    box-shadow: 0 0 30px rgba(34, 211, 238, 0.4);
+    box-shadow: 0 0 30px var(--accent-glow-hover);
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-purple-400 to-emerald-400;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      to right,
+      var(--gradient-from),
+      var(--gradient-via),
+      var(--gradient-to)
+    );
   }
 }

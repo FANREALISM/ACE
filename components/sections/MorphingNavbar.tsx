@@ -7,6 +7,7 @@ import { menuItems } from '@/lib/menuItems'
 import { Menu } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 export default function MorphingNavbar({ profile }: { profile: Profile | null }) {
   const { t } = useLanguage()
@@ -60,6 +61,7 @@ export default function MorphingNavbar({ profile }: { profile: Profile | null })
               )
             )}
             <LanguageSwitcher variant="compact" />
+            <ThemeToggle variant="compact" />
             <button
               onClick={() =>
                 window.dispatchEvent(new CustomEvent('open-command-palette'))

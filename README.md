@@ -116,6 +116,43 @@ popup kecil, bukan konten utama), badge status "Available"/"Unavailable"
 (tetap pill kecil), dan filter chip proyek (tetap rapat karena fungsinya
 sebagai kontrol UI, bukan konten yang perlu ruang bernapas).
 
+## Mode Light / Dark (tema "Putih Merah")
+
+Toggle di tiga tempat: menu utama Hero, navbar setelah scroll, dan
+command palette (Ctrl/Cmd+K → ketik "theme"). Tersimpan di localStorage,
+default dark untuk pengunjung baru (kecuali OS mereka jelas set light
+lewat `prefers-color-scheme`).
+
+**Bagaimana ini bekerja teknisnya** (penting kalau nanti mau nambah
+section baru): situs ini pakai literal Tailwind color class di mana-mana
+(`text-white/60`, `bg-black`, dst) — bukan token warna semantik. Supaya
+tetap bisa di-theme TANPA mengedit belasan file component satu-satu,
+semua override dipusatkan di `app/globals.css` lewat attribute selector
+`[data-theme="light"]` yang menyasar nama class Tailwind yang benar-benar
+kepakai (dicek pakai grep ke source, bukan ditebak). Kalau kamu nambah
+section baru dengan class warna yang belum pernah dipakai di situs ini
+(misal `text-white/95` atau `bg-blue-500/20`), class itu TIDAK akan
+otomatis ke-theme — perlu ditambahkan manual sebagai override baru di
+`globals.css`. Cara ceknya: build situs, buka DevTools di light mode, cek
+apakah ada elemen yang warnanya "salah" (masih dark-mode value).
+
+Semua warna aksen (cyan/purple/emerald) dipetakan ke keluarga merah di
+light mode, bukan dipertahankan multi-hue — konsisten dengan permintaan
+"putih merah", bukan "putih + warna-warna lama tapi lebih terang".
+
+**Sengaja TIDAK ikut tema:**
+- Scrim backdrop Modal/CommandPalette (`bg-black/70`) — tetap gelap di
+  kedua tema, itu konvensi UX peredup background, bukan soal warna tema.
+- Admin panel (`/secret-cmd/*`) — form-form di sana pakai `bg-black/40`
+  untuk input field, sengaja TIDAK di-override karena kalau ikut ter-theme
+  akan bentrok dengan pemakaian literal class yang sama di Modal/chrome
+  publik. Admin panel tetap dark-only by design.
+
+Wajib tahu keterbatasannya: warna theme-color browser (search bar di
+mobile) tetap statis hitam (`viewport.themeColor` di layout.tsx) — tidak
+otomatis ikut toggle manual, cuma ikut `prefers-color-scheme` OS kalau
+mau diperluas nanti.
+
 ## Tombol SYSTEM_ADMIN dihapus dari menu publik
 
 Diganti dua jalur, keduanya lewat keyboard:
