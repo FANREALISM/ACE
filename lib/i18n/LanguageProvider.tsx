@@ -9,28 +9,38 @@ interface LanguageContextValue {
   locale: Locale
   setLocale: (locale: Locale) => void
   toggleLocale: () => void
-  t: Dictionary
+  /** Kamus terjemahan untuk locale aktif saat ini — diakses sebagai
+   *  `translations.nav.startJourney`, dst di komponen manapun lewat
+   *  useLanguage(). */
+  translations: Dictionary
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null)
 
-const STORAGE_KEY = 'portfolio-locale'
+const LOCALE_STORAGE_KEY = 'portfolio-locale'
 
+/**
+ * Provider bahasa ID/EN — bungkus seluruh app di layout.tsx. Simpan
+ * pilihan bahasa ke localStorage, sinkronkan attribute `lang` di <html>
+ * untuk screen reader, dan sediakan dictionary terjemahan lewat
+ * useLanguage() ke komponen manapun di bawahnya.
+ */
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('id')
 
   // Baca preferensi tersimpan setelah mount (localStorage tidak tersedia
   // saat server-render, jadi ini sengaja dijalankan di useEffect).
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY)
-    if (saved === 'id' || saved === 'en') {
-      setLocaleState(saved)
+    const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY)
+    if (savedLocale === 'id' || savedLocale === 'en') {
+      setLocaleState(savedLocale)
     }
   }, [])
 
-  function setLocale(next: Locale) {
-    setLocaleState(next)
-    window.localStorage.setItem(STORAGE_KEY, next)
+  /** Set bahasa secara eksplisit dan simpan ke localStorage. */
+  function setLocale(nextLocale: Locale) {
+    setLocaleState(nextLocale)
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, nextLocale)
   }
 
   // Screen reader pronunciation depends on lang attribute matching the
@@ -40,19 +50,20 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.lang = locale
   }, [locale])
 
+  /** Balik antara 'id' dan 'en' — ini yang dipanggil tombol toggle. */
   function toggleLocale() {
     setLocale(locale === 'id' ? 'en' : 'id')
   }
 
-  const value: LanguageContextValue = {
+  const languageContextValue: LanguageContextValue = {
     locale,
     setLocale,
     toggleLocale,
-    t: getDictionary(locale),
+    translations: getDictionary(locale),
   }
 
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider value={languageContextValue}>
       {/* reducedMotion="user" reads prefers-reduced-motion and
           automatically disables transform/animate on motion.* components —
           a plain CSS media query cannot reach JS-driven Framer animations. */}
@@ -61,10 +72,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+/**
+ * Hook untuk baca/ubah bahasa aktif dan akses dictionary terjemahan dari
+ * komponen manapun di bawah LanguageProvider. Lempar error kalau
+ * dipanggil di luar provider.
+ */
 export function useLanguage() {
-  const ctx = useContext(LanguageContext)
-  if (!ctx) {
+  const languageContextValue = useContext(LanguageContext)
+  if (!languageContextValue) {
     throw new Error('useLanguage must be used within LanguageProvider')
   }
-  return ctx
+  return languageContextValue
 }

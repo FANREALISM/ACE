@@ -13,6 +13,12 @@ interface FileUploadProps {
   maxSizeMb?: number
 }
 
+/**
+ * Upload file non-gambar (default: PDF) — dipakai untuk CV/resume di
+ * Settings admin. Terpisah dari ImageUpload.tsx karena validasinya beda
+ * (tidak cek file.type.startsWith('image/')) dan UI-nya tampilkan link
+ * "Lihat file saat ini" alih-alih thumbnail preview.
+ */
 export default function FileUpload({
   bucket,
   currentUrl,
@@ -22,37 +28,41 @@ export default function FileUpload({
   maxSizeMb = 10,
 }: FileUploadProps) {
   const supabase = createClient()
-  const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  async function handleFileSelected(
+    changeEvent: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const selectedFile = changeEvent.target.files?.[0]
+    if (!selectedFile) return
 
-    if (file.size > maxSizeMb * 1024 * 1024) {
-      setError(`Ukuran file maksimal ${maxSizeMb}MB.`)
+    if (selectedFile.size > maxSizeMb * 1024 * 1024) {
+      setErrorMessage(`Ukuran file maksimal ${maxSizeMb}MB.`)
       return
     }
 
-    setError(null)
-    setUploading(true)
+    setErrorMessage(null)
+    setIsUploading(true)
 
-    const fileExt = file.name.split('.').pop()
-    const filePath = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`
+    const fileExtension = selectedFile.name.split('.').pop()
+    const storagePath = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExtension}`
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(filePath, file, { upsert: true })
+      .upload(storagePath, selectedFile, { upsert: true })
 
     if (uploadError) {
-      setError('Gagal upload: ' + uploadError.message)
-      setUploading(false)
+      setErrorMessage('Gagal upload: ' + uploadError.message)
+      setIsUploading(false)
       return
     }
 
-    const { data } = supabase.storage.from(bucket).getPublicUrl(filePath)
-    onUploaded(data.publicUrl)
-    setUploading(false)
+    const { data: publicUrlResult } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(storagePath)
+    onUploaded(publicUrlResult.publicUrl)
+    setIsUploading(false)
   }
 
   return (
@@ -66,15 +76,17 @@ export default function FileUpload({
           <input
             type="file"
             accept={accept}
-            onChange={handleFileChange}
-            disabled={uploading}
+            onChange={handleFileSelected}
+            disabled={isUploading}
             className="text-sm text-white/60 file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border file:border-white/10 file:bg-white/5 file:text-white/70 file:cursor-pointer hover:file:bg-white/10"
           />
-          {uploading && (
+          {isUploading && (
             <p className="text-xs text-cyan-400 mt-1">Mengunggah...</p>
           )}
-          {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
-          {currentUrl && !uploading && (
+          {errorMessage && (
+            <p className="text-xs text-red-400 mt-1">{errorMessage}</p>
+          )}
+          {currentUrl && !isUploading && (
             <a
               href={currentUrl}
               target="_blank"

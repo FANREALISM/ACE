@@ -1,3 +1,6 @@
+/** Ditampilkan otomatis oleh Next.js (App Router loading.tsx
+ *  convention) selama app/page.tsx menunggu data dari Supabase.
+ *  Muncul di navigasi pertama sebelum konten sempat ter-render. */
 export default function Loading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">

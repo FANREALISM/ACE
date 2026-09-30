@@ -13,7 +13,6 @@ const id: Dictionary = {
   },
   hero: {
     roleFallback: 'SOFTWARE ENGINEER // REKAYASA PERANGKAT LUNAK',
-    ctaButton: 'Lihat Proyek Saya',
     scrollHint: 'scroll ↓',
     availableBadge: 'Terbuka untuk kerja',
     unavailableBadge: 'Sedang tidak menerima proyek',

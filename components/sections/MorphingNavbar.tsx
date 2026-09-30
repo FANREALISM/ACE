@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Profile } from '@/lib/types'
 import { menuItems } from '@/lib/menuItems'
 import { Menu } from 'lucide-react'
@@ -9,25 +10,71 @@ import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 
-export default function MorphingNavbar({ profile }: { profile: Profile | null }) {
-  const { t } = useLanguage()
+/**
+ * Navbar yang "muncul" (fade-in dari atas) setelah pengunjung scroll
+ * melewati sebagian besar Hero section — sebelum itu, navigasi utama
+ * datang dari menu vertikal di dalam Hero sendiri, bukan navbar ini.
+ */
+export default function MorphingNavbar({
+  profile,
+}: {
+  profile: Profile | null
+}) {
+  const { translations } = useLanguage()
   const { scrollY } = useScroll()
-  // Starts appearing once the Hero menu (fades out 0-500px) is mostly gone.
-  const navOpacity = useTransform(scrollY, [350, 550], [0, 1])
-  const navY = useTransform(scrollY, [350, 550], [-16, 0])
+
+  // Sebelumnya [350, 550] — angka piksel absolut yang sama masalahnya
+  // dengan bug fade Hero: tidak proporsional ke tinggi viewport. Di layar
+  // pendek, threshold ini bisa kepicu padahal Hero belum benar-benar
+  // "selesai", atau di layar tinggi malah baru muncul telat. Dihitung
+  // dari tinggi viewport saat mount (window hanya ada di client, aman
+  // karena komponen ini 'use client' dan baris ini jalan saat render
+  // browser, bukan SSR pass pertama — tidak butuh useEffect karena nilai
+  // ini cuma dipakai sebagai konstanta range, bukan re-computed tiap resize).
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800
+  const navbarOpacity = useTransform(
+    scrollY,
+    [viewportHeight * 0.4, viewportHeight * 0.65],
+    [0, 1]
+  )
+  const navbarTranslateY = useTransform(
+    scrollY,
+    [viewportHeight * 0.4, viewportHeight * 0.65],
+    [-16, 0]
+  )
+
+  function openCommandPalette() {
+    window.dispatchEvent(new CustomEvent('open-command-palette'))
+  }
 
   return (
     <motion.header
-      style={{ opacity: navOpacity, y: navY }}
+      style={{
+        opacity: navbarOpacity,
+        y: navbarTranslateY,
+        // env() resolve ke 0 di device tanpa notch — ini tidak menambah
+        // padding apa pun di mayoritas device, cuma aktif di device yang
+        // benar-benar butuh (notch/Dynamic Island, terutama saat
+        // landscape di mana notch bisa menjorok dari SAMPING, bukan
+        // cuma dari atas).
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
+        paddingTop: 'env(safe-area-inset-top)',
+      }}
       className="fixed top-0 left-0 right-0 z-50 glass-nav pointer-events-none"
     >
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between pointer-events-auto">
         <div className="flex items-center gap-3">
           {profile?.avatar_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={profile.avatar_url}
               alt={profile?.name ?? 'Foto profil'}
+              width={32}
+              height={32}
+              // Ukuran tetap (bukan responsive), jadi width/height
+              // eksplisit lebih tepat daripada fill — tidak butuh
+              // wrapper relative tambahan.
+              loading="lazy"
               className="w-8 h-8 rounded-full object-cover border border-white/10"
             />
           )}
@@ -41,31 +88,41 @@ export default function MorphingNavbar({ profile }: { profile: Profile | null })
               bahasa + badge ⌘K dijamin overflow horizontal kalau tetap
               dipaksa satu baris tanpa wrap atau menu mobile. */}
           <div className="hidden md:flex items-center gap-5">
-            {menuItems.map((item) =>
-              item.isAnchor ? (
+            {menuItems.map((menuItem) =>
+              menuItem.isAnchor ? (
                 <a
-                  key={item.key}
-                  href={item.href}
-                  className="text-white/60 hover:text-cyan-400 transition-colors"
+                  key={menuItem.key}
+                  href={menuItem.href}
+                  // relative + group: pembungkus untuk underline animasi
+                  // di bawah. Murni CSS — scale-x-0 ke scale-x-100 lewat
+                  // group-hover, transform-only (scaleX), tidak ada JS
+                  // atau listener tambahan sama sekali.
+                  className="relative group text-white/60 hover:text-cyan-400 transition-colors"
                 >
-                  {t.nav[item.key]}
+                  {translations.nav[menuItem.key]}
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-1 left-0 right-0 h-px bg-cyan-400 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-200"
+                  />
                 </a>
               ) : (
                 <Link
-                  key={item.key}
-                  href={item.href}
-                  className="text-white/60 hover:text-cyan-400 transition-colors"
+                  key={menuItem.key}
+                  href={menuItem.href}
+                  className="relative group text-white/60 hover:text-cyan-400 transition-colors"
                 >
-                  {t.nav[item.key]}
+                  {translations.nav[menuItem.key]}
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-1 left-0 right-0 h-px bg-cyan-400 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-200"
+                  />
                 </Link>
               )
             )}
             <LanguageSwitcher variant="compact" />
             <ThemeToggle variant="compact" />
             <button
-              onClick={() =>
-                window.dispatchEvent(new CustomEvent('open-command-palette'))
-              }
+              onClick={openCommandPalette}
               aria-label="Buka command palette"
               title="Command palette (Ctrl/Cmd + K)"
               className="flex items-center gap-1.5 text-xs font-mono px-2.5 py-1.5 rounded-lg border border-white/15 text-white/50 hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
@@ -79,11 +136,9 @@ export default function MorphingNavbar({ profile }: { profile: Profile | null })
               admin, jadi dipakai ulang sebagai menu mobile alih-alih
               membangun drawer terpisah. */}
           <button
-            onClick={() =>
-              window.dispatchEvent(new CustomEvent('open-command-palette'))
-            }
+            onClick={openCommandPalette}
             aria-label="Buka menu navigasi"
-            className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-white/15 text-white/70 hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
+            className="md:hidden flex items-center justify-center min-w-11 min-h-11 rounded-lg border border-white/15 text-white/70 hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
           >
             <Menu size={16} />
           </button>

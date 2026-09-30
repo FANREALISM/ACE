@@ -13,7 +13,6 @@ const en: Dictionary = {
   },
   hero: {
     roleFallback: 'SOFTWARE ENGINEER',
-    ctaButton: 'View My Projects',
     scrollHint: 'scroll ↓',
     availableBadge: 'Available for work',
     unavailableBadge: 'Not taking new projects',

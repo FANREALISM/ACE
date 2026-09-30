@@ -1,5 +1,9 @@
 export type Locale = 'id' | 'en'
 
+/** Struktur lengkap kamus terjemahan — id.ts dan en.ts harus punya
+ *  bentuk yang PERSIS SAMA (TypeScript memaksa ini lewat structural
+ *  typing terhadap interface ini; kalau salah satu file kurang/lebih
+ *  key, tsc akan error saat build, bukan diam-diam lolos). */
 export interface Dictionary {
   nav: {
     startJourney: string
@@ -10,7 +14,6 @@ export interface Dictionary {
   }
   hero: {
     roleFallback: string
-    ctaButton: string
     scrollHint: string
     availableBadge: string
     unavailableBadge: string

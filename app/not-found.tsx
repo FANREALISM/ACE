@@ -1,5 +1,9 @@
 import Link from 'next/link'
 
+/** Halaman 404 kustom (Next.js App Router not-found.tsx convention) —
+ *  dipicu otomatis lewat notFound() (mis. di /projects/[id] untuk
+ *  proyek yang tidak ada) atau URL yang genuinely tidak cocok route
+ *  manapun. */
 export default function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-black text-white text-center">

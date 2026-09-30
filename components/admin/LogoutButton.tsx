@@ -4,6 +4,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { LogOut } from 'lucide-react'
 
+/** Tombol logout admin — sign out dari Supabase Auth, redirect ke
+ *  halaman login, lalu router.refresh() supaya server components (yang
+ *  cek auth lewat getUser()) re-evaluate status login yang baru. */
 export default function LogoutButton() {
   const router = useRouter()
   const supabase = createClient()

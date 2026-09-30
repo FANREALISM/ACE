@@ -80,6 +80,7 @@ body {
 [data-theme='light'] .text-white\/40 { color: rgb(24 24 27 / 0.42); }
 [data-theme='light'] .text-white\/30 { color: rgb(24 24 27 / 0.35); }
 [data-theme='light'] .text-white\/25 { color: rgb(24 24 27 / 0.30); }
+[data-theme='light'] .text-white\/20 { color: rgb(24 24 27 / 0.22); }
 
 [data-theme='light'] .bg-black { background-color: #ffffff; }
 [data-theme='light'] .bg-white\/5 { background-color: rgb(0 0 0 / 0.025); }
@@ -95,6 +96,8 @@ body {
 [data-theme='light'] .text-cyan-400 { color: #dc2626; }
 [data-theme='light'] .text-cyan-400\/60 { color: rgb(220 38 38 / 0.7); }
 [data-theme='light'] .text-cyan-400\/80 { color: rgb(220 38 38 / 0.85); }
+[data-theme='light'] .text-cyan-400\/70 { color: rgb(220 38 38 / 0.75); }
+[data-theme='light'] .bg-white\/10 { background-color: rgb(0 0 0 / 0.06); }
 [data-theme='light'] .bg-cyan-400 { background-color: #dc2626; }
 [data-theme='light'] .bg-cyan-500\/10 { background-color: rgb(220 38 38 / 0.08); }
 [data-theme='light'] .bg-cyan-500\/20 { background-color: rgb(220 38 38 / 0.12); }
@@ -125,6 +128,8 @@ body {
    cukup di atas putih (text-red-400 terlalu terang untuk WCAG di bg
    putih). */
 [data-theme='light'] .text-red-400\/80 { color: rgb(185 28 28 / 0.9); }
+[data-theme='light'] .text-red-400 { color: #dc2626; }
+[data-theme='light'] .text-emerald-400 { color: #b91c1c; }
 
 /* Varian pseudo-class Tailwind (placeholder:, hover:, dst) compile ke
    selector berbeda dari class dasarnya — tidak otomatis ke-cover oleh
@@ -145,6 +150,19 @@ body {
 [data-theme='light'] .hover\:border-cyan-400\/40:hover { border-color: rgb(220 38 38 / 0.45); }
 [data-theme='light'] .hover\:border-cyan-400\/50:hover { border-color: rgb(220 38 38 / 0.55); }
 [data-theme='light'] .hover\:border-emerald-400\/40:hover { border-color: rgb(185 28 28 / 0.45); }
+
+/* Semua input/textarea/select di situs ini (42 field, public + admin)
+   tidak punya class ukuran font eksplisit — artinya jatuh ke default
+   browser (~13px di kebanyakan UA stylesheet). Di bawah 16px, iOS
+   Safari otomatis ZOOM IN begitu field di-tap, perilaku yang tidak bisa
+   dimatikan lewat viewport meta (Apple sengaja mengunci ini sebagai
+   fitur aksesibilitas, bukan bug). Satu aturan terpusat di sini,
+   daripada nambah class ke 42 elemen satu-satu di banyak file. */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
 
 h1, h2, h3, h4 {
   font-family: var(--font-heading);
@@ -192,13 +210,21 @@ h1, h2, h3, h4 {
 
 @layer components {
   .glass-card {
-    @apply backdrop-blur-xl border rounded-2xl;
+    /* backdrop-blur-xl (24px) sebelumnya di sini — dikurangi ke md (12px)
+       karena class ini dipakai di SETIAP project card, certificate card,
+       dan elemen glass lain sekaligus (bisa 15-30+ instance aktif
+       bersamaan di satu halaman). backdrop-filter memaksa browser
+       re-composite area di belakangnya terus-menerus selama scroll;
+       makin besar radius blur, makin berat kerja itu per elemen, dan
+       biayanya kalikan jumlah elemen yang render. 12px masih kelihatan
+       "frosted glass", cuma kurang intens. */
+    @apply backdrop-blur-md border rounded-2xl;
     background-color: var(--surface-fill);
     border-color: var(--surface-border);
   }
 
   .glass-nav {
-    @apply backdrop-blur-xl border-b;
+    @apply backdrop-blur-md border-b;
     background-color: var(--nav-fill);
     border-color: var(--surface-border);
   }
@@ -218,7 +244,28 @@ h1, h2, h3, h4 {
       to right,
       var(--gradient-from),
       var(--gradient-via),
-      var(--gradient-to)
+      var(--gradient-to),
+      var(--gradient-via),
+      var(--gradient-from)
     );
+    /* background-size lebih besar dari elemen + animasi
+       background-position menciptakan efek gradient "mengalir". Durasi
+       sengaja lambat (8s) — animasi lambat berarti pergeseran per-frame
+       kecil, browser bisa optimasi lebih baik dibanding gradient yang
+       berubah cepat, dan secara visual juga tidak mengganggu (heading
+       tetap gampang dibaca, bukan berkedip-kedip). prefers-reduced-motion
+       SUDAH ditangani lewat aturan global di atas (animation-duration
+       dipaksa 0.01ms), tidak perlu override terpisah di sini. */
+    background-size: 200% auto;
+    animation: gradient-shift 8s ease-in-out infinite;
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% {
+      background-position: 0% center;
+    }
+    50% {
+      background-position: 100% center;
+    }
   }
 }

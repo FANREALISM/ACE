@@ -2,11 +2,17 @@
 
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 
+interface LanguageSwitcherProps {
+  /** 'default' = versi besar untuk menu utama Hero. 'compact' = versi
+   *  pill kecil untuk navbar setelah scroll. */
+  variant?: 'default' | 'compact'
+}
+
+/** Tombol toggle bahasa ID/EN — pasangan dari ThemeToggle, pola yang
+ *  sama persis (dua variant, satu context di belakangnya). */
 export default function LanguageSwitcher({
   variant = 'default',
-}: {
-  variant?: 'default' | 'compact'
-}) {
+}: LanguageSwitcherProps) {
   const { locale, toggleLocale } = useLanguage()
 
   if (variant === 'compact') {
@@ -14,7 +20,7 @@ export default function LanguageSwitcher({
       <button
         onClick={toggleLocale}
         aria-label="Switch language"
-        className="font-mono text-xs uppercase tracking-wider px-3 py-1.5 rounded-full border border-white/15 text-white/60 hover:border-cyan-400/50 hover:text-cyan-300 transition-colors"
+        className="flex items-center justify-center min-h-11 font-mono text-xs uppercase tracking-wider px-3 rounded-full border border-white/15 text-white/60 hover:border-cyan-400/50 hover:text-cyan-300 transition-colors"
       >
         {locale === 'id' ? 'ID' : 'EN'} / {locale === 'id' ? 'EN' : 'ID'}
       </button>

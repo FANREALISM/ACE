@@ -3,11 +3,17 @@
 import { Sun, Moon } from 'lucide-react'
 import { useTheme } from '@/lib/theme/ThemeProvider'
 
-export default function ThemeToggle({
-  variant = 'default',
-}: {
+interface ThemeToggleProps {
+  /** 'default' = versi besar untuk menu utama Hero (dengan label teks
+   *  penuh). 'compact' = versi ikon-saja untuk navbar setelah scroll. */
   variant?: 'default' | 'compact'
-}) {
+}
+
+/** Tombol toggle tema dark/light. Render dua gaya visual tergantung
+ *  `variant`, tapi keduanya panggil `toggleTheme()` yang sama dari
+ *  ThemeProvider — jadi status tema tetap sinkron di manapun tombol ini
+ *  ditaruh. */
+export default function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme()
 
   if (variant === 'compact') {
@@ -16,7 +22,10 @@ export default function ThemeToggle({
         onClick={toggleTheme}
         aria-label={theme === 'dark' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'}
         title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-        className="flex items-center justify-center w-8 h-8 rounded-full border border-white/15 text-white/60 hover:border-cyan-400/50 hover:text-cyan-300 transition-colors"
+        // min-w/min-h-11 (44px) — standar minimum touch target Apple/
+        // Google HIG. Ukuran visual ikon tetap sama (size=14), cuma area
+        // yang bisa di-tap yang diperbesar lewat flex centering.
+        className="flex items-center justify-center min-w-11 min-h-11 rounded-full border border-white/15 text-white/60 hover:border-cyan-400/50 hover:text-cyan-300 transition-colors"
       >
         {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
       </button>

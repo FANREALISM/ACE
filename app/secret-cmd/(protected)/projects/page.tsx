@@ -6,28 +6,31 @@ import ProjectForm from '@/components/admin/ProjectForm'
 import type { Project } from '@/lib/types'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 
+/** Halaman admin CRUD untuk Projects — list + create + edit + delete,
+ *  semuanya di satu halaman (form muncul inline, bukan halaman
+ *  terpisah). */
 export default function ProjectsAdminPage() {
   const supabase = createClient()
   const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState<Project | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isFormVisible, setIsFormVisible] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   async function loadProjects() {
-    setLoading(true)
-    setError(null)
-    const { data, error: loadError } = await supabase
+    setIsLoading(true)
+    setErrorMessage(null)
+    const { data: projectsData, error: loadError } = await supabase
       .from('projects')
       .select('*')
       .order('display_order', { ascending: true })
     if (loadError) {
-      setError('Gagal memuat proyek: ' + loadError.message)
-      setLoading(false)
+      setErrorMessage('Gagal memuat proyek: ' + loadError.message)
+      setIsLoading(false)
       return
     }
-    setProjects(data ?? [])
-    setLoading(false)
+    setProjects(projectsData ?? [])
+    setIsLoading(false)
   }
 
   useEffect(() => {
@@ -35,41 +38,43 @@ export default function ProjectsAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handleCreate(data: Omit<Project, 'id' | 'created_at'>) {
-    setError(null)
-    const { error: insertError } = await supabase.from('projects').insert(data)
+  async function handleCreate(projectData: Omit<Project, 'id' | 'created_at'>) {
+    setErrorMessage(null)
+    const { error: insertError } = await supabase
+      .from('projects')
+      .insert(projectData)
     if (insertError) {
-      setError('Gagal menambah proyek: ' + insertError.message)
+      setErrorMessage('Gagal menambah proyek: ' + insertError.message)
       return
     }
-    setShowForm(false)
+    setIsFormVisible(false)
     loadProjects()
   }
 
-  async function handleUpdate(data: Omit<Project, 'id' | 'created_at'>) {
-    if (!editing) return
-    setError(null)
+  async function handleUpdate(projectData: Omit<Project, 'id' | 'created_at'>) {
+    if (!editingProject) return
+    setErrorMessage(null)
     const { error: updateError } = await supabase
       .from('projects')
-      .update(data)
-      .eq('id', editing.id)
+      .update(projectData)
+      .eq('id', editingProject.id)
     if (updateError) {
-      setError('Gagal menyimpan proyek: ' + updateError.message)
+      setErrorMessage('Gagal menyimpan proyek: ' + updateError.message)
       return
     }
-    setEditing(null)
+    setEditingProject(null)
     loadProjects()
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(projectId: string) {
     if (!confirm('Yakin hapus proyek ini?')) return
-    setError(null)
+    setErrorMessage(null)
     const { error: deleteError } = await supabase
       .from('projects')
       .delete()
-      .eq('id', id)
+      .eq('id', projectId)
     if (deleteError) {
-      setError('Gagal menghapus proyek: ' + deleteError.message)
+      setErrorMessage('Gagal menghapus proyek: ' + deleteError.message)
       return
     }
     loadProjects()
@@ -79,9 +84,9 @@ export default function ProjectsAdminPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Kelola Projects</h1>
-        {!showForm && !editing && (
+        {!isFormVisible && !editingProject && (
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => setIsFormVisible(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
           >
             <Plus size={16} /> Tambah Proyek
@@ -89,32 +94,32 @@ export default function ProjectsAdminPage() {
         )}
       </div>
 
-      {error && (
+      {errorMessage && (
         <p className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3">
-          {error}
+          {errorMessage}
         </p>
       )}
 
-      {showForm && (
+      {isFormVisible && (
         <div className="mb-8">
           <ProjectForm
             onSubmit={handleCreate}
-            onCancel={() => setShowForm(false)}
+            onCancel={() => setIsFormVisible(false)}
           />
         </div>
       )}
 
-      {editing && (
+      {editingProject && (
         <div className="mb-8">
           <ProjectForm
-            initial={editing}
+            initial={editingProject}
             onSubmit={handleUpdate}
-            onCancel={() => setEditing(null)}
+            onCancel={() => setEditingProject(null)}
           />
         </div>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <p className="text-white/40">Memuat...</p>
       ) : (
         <div className="space-y-3">
@@ -132,8 +137,8 @@ export default function ProjectsAdminPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    setEditing(project)
-                    setShowForm(false)
+                    setEditingProject(project)
+                    setIsFormVisible(false)
                   }}
                   aria-label="Edit proyek ini"
                   className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"

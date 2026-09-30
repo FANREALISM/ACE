@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import AboutSectionForm from '@/components/admin/AboutSectionForm'
 import type { AboutSection } from '@/lib/types'
@@ -8,32 +9,38 @@ import { Pencil, Trash2, Plus, ArrowUp, ArrowDown } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-function resolveIcon(name: string): LucideIcon {
-  return (Icons as unknown as Record<string, LucideIcon>)[name] ?? Icons.Cpu
+function resolveIcon(iconName: string): LucideIcon {
+  return (Icons as unknown as Record<string, LucideIcon>)[iconName] ?? Icons.Cpu
 }
 
+/** Halaman admin CRUD untuk About sections — pola sama dengan halaman
+ *  admin lain, ditambah fitur reorder (tombol panah atas/bawah) karena
+ *  urutan paragraf About berpengaruh langsung ke urutan tampil di
+ *  halaman publik. */
 export default function AboutAdminPage() {
   const supabase = createClient()
   const [sections, setSections] = useState<AboutSection[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState<AboutSection | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isFormVisible, setIsFormVisible] = useState(false)
+  const [editingSection, setEditingSection] = useState<AboutSection | null>(
+    null
+  )
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   async function loadSections() {
-    setLoading(true)
-    setError(null)
-    const { data, error: loadError } = await supabase
+    setIsLoading(true)
+    setErrorMessage(null)
+    const { data: sectionsData, error: loadError } = await supabase
       .from('about_sections')
       .select('*')
       .order('display_order', { ascending: true })
     if (loadError) {
-      setError('Gagal memuat konten About: ' + loadError.message)
-      setLoading(false)
+      setErrorMessage('Gagal memuat konten About: ' + loadError.message)
+      setIsLoading(false)
       return
     }
-    setSections(data ?? [])
-    setLoading(false)
+    setSections(sectionsData ?? [])
+    setIsLoading(false)
   }
 
   useEffect(() => {
@@ -42,77 +49,83 @@ export default function AboutAdminPage() {
   }, [])
 
   async function handleCreate(
-    data: Omit<AboutSection, 'id' | 'created_at'>
+    sectionData: Omit<AboutSection, 'id' | 'created_at'>
   ) {
-    setError(null)
-    const nextOrder =
+    setErrorMessage(null)
+    const nextDisplayOrder =
       sections.length > 0
-        ? Math.max(...sections.map((s) => s.display_order)) + 1
+        ? Math.max(...sections.map((section) => section.display_order)) + 1
         : 0
     const { error: insertError } = await supabase
       .from('about_sections')
-      .insert({ ...data, display_order: nextOrder })
+      .insert({ ...sectionData, display_order: nextDisplayOrder })
     if (insertError) {
-      setError('Gagal menambah paragraf: ' + insertError.message)
+      setErrorMessage('Gagal menambah paragraf: ' + insertError.message)
       return
     }
-    setShowForm(false)
+    setIsFormVisible(false)
     loadSections()
   }
 
   async function handleUpdate(
-    data: Omit<AboutSection, 'id' | 'created_at'>
+    sectionData: Omit<AboutSection, 'id' | 'created_at'>
   ) {
-    if (!editing) return
-    setError(null)
+    if (!editingSection) return
+    setErrorMessage(null)
     const { error: updateError } = await supabase
       .from('about_sections')
-      .update(data)
-      .eq('id', editing.id)
+      .update(sectionData)
+      .eq('id', editingSection.id)
     if (updateError) {
-      setError('Gagal menyimpan paragraf: ' + updateError.message)
+      setErrorMessage('Gagal menyimpan paragraf: ' + updateError.message)
       return
     }
-    setEditing(null)
+    setEditingSection(null)
     loadSections()
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(sectionId: string) {
     if (!confirm('Yakin hapus paragraf ini?')) return
-    setError(null)
+    setErrorMessage(null)
     const { error: deleteError } = await supabase
       .from('about_sections')
       .delete()
-      .eq('id', id)
+      .eq('id', sectionId)
     if (deleteError) {
-      setError('Gagal menghapus paragraf: ' + deleteError.message)
+      setErrorMessage('Gagal menghapus paragraf: ' + deleteError.message)
       return
     }
     loadSections()
   }
 
-  async function handleMove(index: number, direction: 'up' | 'down') {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
+  /** Tukar display_order antara paragraf di `sectionIndex` dengan
+   *  tetangganya (atas/bawah) — cara paling sederhana untuk reorder
+   *  tanpa perlu drag-and-drop atau re-nomor ulang semua item. */
+  async function handleMoveSection(
+    sectionIndex: number,
+    direction: 'up' | 'down'
+  ) {
+    const targetIndex =
+      direction === 'up' ? sectionIndex - 1 : sectionIndex + 1
     if (targetIndex < 0 || targetIndex >= sections.length) return
 
-    const current = sections[index]
-    const target = sections[targetIndex]
-    setError(null)
+    const currentSection = sections[sectionIndex]
+    const targetSection = sections[targetIndex]
+    setErrorMessage(null)
 
-    // Tukar display_order antara dua item bertetangga
-    const results = await Promise.all([
+    const swapResults = await Promise.all([
       supabase
         .from('about_sections')
-        .update({ display_order: target.display_order })
-        .eq('id', current.id),
+        .update({ display_order: targetSection.display_order })
+        .eq('id', currentSection.id),
       supabase
         .from('about_sections')
-        .update({ display_order: current.display_order })
-        .eq('id', target.id),
+        .update({ display_order: currentSection.display_order })
+        .eq('id', targetSection.id),
     ])
-    const failed = results.find((r) => r.error)
-    if (failed?.error) {
-      setError('Gagal mengubah urutan: ' + failed.error.message)
+    const failedSwap = swapResults.find((result) => result.error)
+    if (failedSwap?.error) {
+      setErrorMessage('Gagal mengubah urutan: ' + failedSwap.error.message)
       return
     }
     loadSections()
@@ -122,9 +135,9 @@ export default function AboutAdminPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Kelola Tentang Saya</h1>
-        {!showForm && !editing && (
+        {!isFormVisible && !editingSection && (
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => setIsFormVisible(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
           >
             <Plus size={16} /> Tambah Paragraf
@@ -132,50 +145,51 @@ export default function AboutAdminPage() {
         )}
       </div>
 
-      {error && (
+      {errorMessage && (
         <p className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3">
-          {error}
+          {errorMessage}
         </p>
       )}
 
-      {showForm && (
+      {isFormVisible && (
         <div className="mb-8">
           <AboutSectionForm
             onSubmit={handleCreate}
-            onCancel={() => setShowForm(false)}
+            onCancel={() => setIsFormVisible(false)}
           />
         </div>
       )}
 
-      {editing && (
+      {editingSection && (
         <div className="mb-8">
           <AboutSectionForm
-            initial={editing}
+            initial={editingSection}
             onSubmit={handleUpdate}
-            onCancel={() => setEditing(null)}
+            onCancel={() => setEditingSection(null)}
           />
         </div>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <p className="text-white/40">Memuat...</p>
       ) : (
         <div className="space-y-3">
-          {sections.map((section, i) => (
+          {sections.map((section, sectionIndex) => (
             <div key={section.id} className="glass-card p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 shrink-0">
                     {(() => {
-                      const Icon = resolveIcon(section.icon)
-                      return <Icon size={14} />
+                      const SectionIcon = resolveIcon(section.icon)
+                      return <SectionIcon size={14} />
                     })()}
                   </div>
                   {section.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={section.image_url}
                       alt={section.title}
+                      width={40}
+                      height={40}
                       className="w-10 h-10 rounded-lg object-cover border border-white/10 shrink-0"
                     />
                   )}
@@ -190,16 +204,16 @@ export default function AboutAdminPage() {
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button
-                    onClick={() => handleMove(i, 'up')}
-                    disabled={i === 0}
+                    onClick={() => handleMoveSection(sectionIndex, 'up')}
+                    disabled={sectionIndex === 0}
                     aria-label="Pindahkan paragraf ke atas"
                     className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
                   >
                     <ArrowUp size={16} />
                   </button>
                   <button
-                    onClick={() => handleMove(i, 'down')}
-                    disabled={i === sections.length - 1}
+                    onClick={() => handleMoveSection(sectionIndex, 'down')}
+                    disabled={sectionIndex === sections.length - 1}
                     aria-label="Pindahkan paragraf ke bawah"
                     className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
                   >
@@ -207,8 +221,8 @@ export default function AboutAdminPage() {
                   </button>
                   <button
                     onClick={() => {
-                      setEditing(section)
-                      setShowForm(false)
+                      setEditingSection(section)
+                      setIsFormVisible(false)
                     }}
                     aria-label="Edit paragraf ini"
                     className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"

@@ -20,6 +20,8 @@ import {
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import { useTheme } from '@/lib/theme/ThemeProvider'
 
+/** Satu entri command di palette — section untuk lompat ke bagian
+ *  halaman, action untuk toggle bahasa/tema, route untuk navigasi. */
 interface Command {
   id: string
   label: string
@@ -28,18 +30,25 @@ interface Command {
   run: () => void
 }
 
-function scrollToId(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+/** Scroll halus ke elemen dengan id tertentu — dipakai semua command
+ *  bertipe "Section" (About, Skills, Projects, dst). */
+function scrollToSection(sectionId: string) {
+  document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' })
 }
 
+/**
+ * Command palette gaya VS Code (Ctrl/Cmd+K) — navigasi cepat ke section
+ * manapun, toggle bahasa/tema, atau lompat ke admin panel, semua lewat
+ * keyboard. Dipasang sekali secara global di layout.tsx.
+ */
 export default function CommandPalette() {
   const router = useRouter()
-  const { t, toggleLocale, locale } = useLanguage()
+  const { translations, toggleLocale, locale } = useLanguage()
   const { theme, toggleTheme } = useTheme()
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(0)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Cmd+K (Mac) / Ctrl+K (Windows/Linux) membuka palette dari mana saja.
   // Dicegah default browser behaviour-nya (biasanya fokus address bar).
@@ -49,81 +58,94 @@ export default function CommandPalette() {
   // "A" dipilih untuk "Admin"; kombinasi Shift+A tidak dipakai browser
   // manapun secara default (beda dari Ctrl+N/T/W yang selalu di-reserve).
   useEffect(() => {
-    function handleGlobalKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        setOpen((v) => !v)
+    function handleGlobalKeyDown(keyboardEvent: KeyboardEvent) {
+      const isCmdOrCtrl = keyboardEvent.metaKey || keyboardEvent.ctrlKey
+
+      if (isCmdOrCtrl && keyboardEvent.key.toLowerCase() === 'k') {
+        keyboardEvent.preventDefault()
+        setIsOpen((currentlyOpen) => !currentlyOpen)
       } else if (
-        (e.metaKey || e.ctrlKey) &&
-        e.shiftKey &&
-        e.key.toLowerCase() === 'a'
+        isCmdOrCtrl &&
+        keyboardEvent.shiftKey &&
+        keyboardEvent.key.toLowerCase() === 'a'
       ) {
-        e.preventDefault()
-        setOpen(false)
+        keyboardEvent.preventDefault()
+        setIsOpen(false)
         router.push('/secret-cmd')
       }
     }
-    function handleExternalOpen() {
-      setOpen(true)
+
+    function handleExternalOpenRequest() {
+      setIsOpen(true)
     }
-    window.addEventListener('keydown', handleGlobalKey)
-    window.addEventListener('open-command-palette', handleExternalOpen)
+
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    window.addEventListener('open-command-palette', handleExternalOpenRequest)
     return () => {
-      window.removeEventListener('keydown', handleGlobalKey)
-      window.removeEventListener('open-command-palette', handleExternalOpen)
+      window.removeEventListener('keydown', handleGlobalKeyDown)
+      window.removeEventListener(
+        'open-command-palette',
+        handleExternalOpenRequest
+      )
     }
   }, [router])
 
+  // Reset pencarian & fokus input setiap kali palette dibuka; kunci
+  // scroll body supaya konten di belakang tidak ikut scroll.
   useEffect(() => {
-    if (open) {
-      setQuery('')
-      setSelected(0)
+    if (isOpen) {
+      setSearchQuery('')
+      setSelectedIndex(0)
       // Delay kecil supaya fokus terjadi setelah elemen ter-mount, bukan
       // sebelum animasi masuk selesai (kalau tidak, fokus bisa gagal
       // diam-diam di beberapa browser).
-      setTimeout(() => inputRef.current?.focus(), 50)
+      setTimeout(() => searchInputRef.current?.focus(), 50)
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
     }
-  }, [open])
+  }, [isOpen])
 
+  // Daftar semua command yang tersedia. useMemo supaya array ini tidak
+  // dibuat ulang tiap render — cuma berubah kalau salah satu dependency
+  // (bahasa, tema, dst) benar-benar berubah.
   const commands: Command[] = useMemo(
     () => [
       {
         id: 'about',
-        label: t.nav.startJourney,
+        label: translations.nav.startJourney,
         hint: 'Section',
         icon: User,
-        run: () => scrollToId('about'),
+        run: () => scrollToSection('about'),
       },
       {
         id: 'skills',
-        label: t.nav.techStack,
+        label: translations.nav.techStack,
         hint: 'Section',
         icon: Cpu,
-        run: () => scrollToId('skills'),
+        run: () => scrollToSection('skills'),
       },
       {
         id: 'projects',
-        label: t.nav.loadProjects,
+        label: translations.nav.loadProjects,
         hint: 'Section',
         icon: Layers,
-        run: () => scrollToId('projects'),
+        run: () => scrollToSection('projects'),
       },
       {
         id: 'certificates',
-        label: t.nav.achievements,
+        label: translations.nav.achievements,
         hint: 'Section',
         icon: Award,
-        run: () => scrollToId('certificates'),
+        run: () => scrollToSection('certificates'),
       },
       {
         id: 'contact',
-        label: t.contact.heading + ' ' + t.contact.headingAccent,
+        label:
+          translations.contact.heading + ' ' + translations.contact.headingAccent,
         hint: 'Section',
         icon: Mail,
-        run: () => scrollToId('contact'),
+        run: () => scrollToSection('contact'),
       },
       {
         id: 'lang',
@@ -143,52 +165,62 @@ export default function CommandPalette() {
       },
       {
         id: 'admin',
-        label: t.nav.systemAdmin,
+        label: translations.nav.systemAdmin,
         hint: 'Route',
         icon: ShieldCheck,
         run: () => router.push('/secret-cmd'),
       },
     ],
-    [t, locale, toggleLocale, theme, toggleTheme, router]
+    [translations, locale, toggleLocale, theme, toggleTheme, router]
   )
 
-  const filtered = commands.filter((c) =>
-    c.label.toLowerCase().includes(query.toLowerCase())
+  // Filter command berdasarkan apa yang diketik user — substring match
+  // sederhana pada label, tidak case-sensitive.
+  const filteredCommands = commands.filter((command) =>
+    command.label.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Reset highlight ke item pertama setiap kali hasil pencarian berubah
+  // (kalau tidak, highlight bisa "nyangkut" di index yang sudah tidak
+  // valid setelah filter mengecilkan daftar).
   useEffect(() => {
-    setSelected(0)
-  }, [query])
+    setSelectedIndex(0)
+  }, [searchQuery])
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') {
-      setOpen(false)
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setSelected((s) => Math.min(s + 1, filtered.length - 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setSelected((s) => Math.max(s - 1, 0))
-    } else if (e.key === 'Enter') {
-      e.preventDefault()
-      const cmd = filtered[selected]
-      if (cmd) {
-        cmd.run()
-        setOpen(false)
+  /** Navigasi keyboard di dalam palette: panah atas/bawah untuk pindah
+   *  highlight, Enter untuk eksekusi command yang di-highlight, Escape
+   *  untuk tutup. */
+  function handleSearchKeyDown(keyboardEvent: React.KeyboardEvent) {
+    if (keyboardEvent.key === 'Escape') {
+      setIsOpen(false)
+    } else if (keyboardEvent.key === 'ArrowDown') {
+      keyboardEvent.preventDefault()
+      setSelectedIndex((currentIndex) =>
+        Math.min(currentIndex + 1, filteredCommands.length - 1)
+      )
+    } else if (keyboardEvent.key === 'ArrowUp') {
+      keyboardEvent.preventDefault()
+      setSelectedIndex((currentIndex) => Math.max(currentIndex - 1, 0))
+    } else if (keyboardEvent.key === 'Enter') {
+      keyboardEvent.preventDefault()
+      const highlightedCommand = filteredCommands[selectedIndex]
+      if (highlightedCommand) {
+        highlightedCommand.run()
+        setIsOpen(false)
       }
     }
   }
 
   return (
     <AnimatePresence>
-      {open && (
+      {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4"
-          onClick={() => setOpen(false)}
+          onClick={() => setIsOpen(false)}
         >
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
@@ -197,7 +229,7 @@ export default function CommandPalette() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(clickEvent) => clickEvent.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
@@ -207,10 +239,10 @@ export default function CommandPalette() {
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
               <Search size={16} className="text-white/40 shrink-0" />
               <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
+                ref={searchInputRef}
+                value={searchQuery}
+                onChange={(changeEvent) => setSearchQuery(changeEvent.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 placeholder="Ketik perintah atau nama section..."
                 className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white/30"
                 aria-label="Cari perintah"
@@ -221,36 +253,38 @@ export default function CommandPalette() {
             </div>
 
             <div className="max-h-72 overflow-y-auto py-2">
-              {filtered.length === 0 && (
+              {filteredCommands.length === 0 && (
                 <p className="px-4 py-6 text-sm text-white/30 text-center">
                   Tidak ada hasil.
                 </p>
               )}
-              {filtered.map((cmd, i) => {
-                const Icon = cmd.icon
-                const active = i === selected
+              {filteredCommands.map((command, index) => {
+                const CommandIcon = command.icon
+                const isHighlighted = index === selectedIndex
                 return (
                   <button
-                    key={cmd.id}
+                    key={command.id}
                     onClick={() => {
-                      cmd.run()
-                      setOpen(false)
+                      command.run()
+                      setIsOpen(false)
                     }}
-                    onMouseEnter={() => setSelected(i)}
+                    onMouseEnter={() => setSelectedIndex(index)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors ${
-                      active
+                      isHighlighted
                         ? 'bg-cyan-500/10 text-cyan-300'
                         : 'text-white/70 hover:bg-white/5'
                     }`}
                   >
-                    <Icon size={15} />
-                    <span className="flex-1">{cmd.label}</span>
-                    {cmd.hint && (
+                    <CommandIcon size={15} />
+                    <span className="flex-1">{command.label}</span>
+                    {command.hint && (
                       <span className="text-[10px] font-mono uppercase text-white/25">
-                        {cmd.hint}
+                        {command.hint}
                       </span>
                     )}
-                    {active && <CornerDownLeft size={13} className="text-cyan-400/60" />}
+                    {isHighlighted && (
+                      <CornerDownLeft size={13} className="text-cyan-400/60" />
+                    )}
                   </button>
                 )
               })}

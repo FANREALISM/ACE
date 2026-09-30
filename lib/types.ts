@@ -15,6 +15,15 @@ export interface Profile {
   updated_at: string
 }
 
+export interface ContactMessage {
+  id: string
+  name: string
+  email: string
+  message: string
+  is_read: boolean
+  created_at: string
+}
+
 export interface Project {
   id: string
   title: string
@@ -28,6 +37,15 @@ export interface Project {
   is_featured: boolean
   display_order: number
   created_at: string
+  // Case study — semua opsional. Kartu proyek menampilkan tombol "Read
+  // Case Study" hanya kalau MINIMAL SATU field ini diisi, bukan
+  // mewajibkan keempatnya. Dipisah dari `description` (yang tetap
+  // ringkasan pendek di kartu) karena ini konten panjang untuk halaman
+  // /projects/[id] tersendiri, bukan untuk ditampilkan di grid.
+  case_study_problem: string | null
+  case_study_approach: string | null
+  case_study_tradeoff: string | null
+  case_study_learnings: string | null
 }
 
 export interface AboutSection {
@@ -46,6 +64,8 @@ export interface Certificate {
   title: string
   issuer: string
   issue_date: string | null
+  expiry_date: string | null
+  credential_id: string | null
   credential_url: string | null
   image_url: string | null
   display_order: number

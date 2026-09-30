@@ -31,30 +31,37 @@ const ICON_OPTIONS = [
   'Wrench',
 ] as const
 
-function resolveIcon(name: string): LucideIcon {
-  return (Icons as unknown as Record<string, LucideIcon>)[name] ?? Icons.Code2
+function resolveIcon(iconName: string): LucideIcon {
+  return (
+    (Icons as unknown as Record<string, LucideIcon>)[iconName] ?? Icons.Code2
+  )
 }
 
+/**
+ * Form admin untuk satu skill/tech-stack chip — nama, ikon (dari daftar
+ * terkurasi), kategori opsional (buat pengelompokan visual kalau nanti
+ * dibutuhkan, belum dipakai di tampilan publik saat ini).
+ */
 export default function SkillForm({
   initial,
   onSubmit,
   onCancel,
 }: SkillFormProps) {
-  const [name, setName] = useState(initial?.name ?? '')
-  const [icon, setIcon] = useState(initial?.icon ?? 'Code2')
+  const [skillName, setSkillName] = useState(initial?.name ?? '')
+  const [selectedIcon, setSelectedIcon] = useState(initial?.icon ?? 'Code2')
   const [category, setCategory] = useState(initial?.category ?? '')
-  const [saving, setSaving] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
+  async function handleSubmit(formEvent: React.FormEvent) {
+    formEvent.preventDefault()
+    setIsSaving(true)
     await onSubmit({
-      name,
-      icon,
+      name: skillName,
+      icon: selectedIcon,
       category: category || null,
       display_order: initial?.display_order ?? 0,
     })
-    setSaving(false)
+    setIsSaving(false)
   }
 
   return (
@@ -64,8 +71,8 @@ export default function SkillForm({
           Nama Skill
         </label>
         <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={skillName}
+          onChange={(changeEvent) => setSkillName(changeEvent.target.value)}
           required
           placeholder="mis. React, PHP, Figma"
           className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
@@ -78,7 +85,7 @@ export default function SkillForm({
         </label>
         <input
           value={category ?? ''}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(changeEvent) => setCategory(changeEvent.target.value)}
           placeholder="mis. Frontend, Backend, Tools"
           className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
         />
@@ -87,24 +94,24 @@ export default function SkillForm({
       <div>
         <label className="block text-sm text-white/50 mb-2">Ikon</label>
         <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
-          {ICON_OPTIONS.map((opt) => {
-            const Icon = resolveIcon(opt)
-            const active = icon === opt
+          {ICON_OPTIONS.map((iconOption) => {
+            const IconComponent = resolveIcon(iconOption)
+            const isActiveIcon = selectedIcon === iconOption
             return (
               <button
-                key={opt}
+                key={iconOption}
                 type="button"
-                onClick={() => setIcon(opt)}
-                title={opt}
-                aria-label={`Pilih ikon ${opt}`}
-                aria-pressed={active}
+                onClick={() => setSelectedIcon(iconOption)}
+                title={iconOption}
+                aria-label={`Pilih ikon ${iconOption}`}
+                aria-pressed={isActiveIcon}
                 className={`flex items-center justify-center h-10 rounded-lg border transition-colors ${
-                  active
+                  isActiveIcon
                     ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
                     : 'bg-black/40 border-white/10 text-white/50 hover:border-white/30'
                 }`}
               >
-                <Icon size={16} />
+                <IconComponent size={16} />
               </button>
             )
           })}
@@ -114,10 +121,10 @@ export default function SkillForm({
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={saving}
+          disabled={isSaving}
           className="px-6 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
         >
-          {saving ? 'Menyimpan...' : 'Simpan'}
+          {isSaving ? 'Menyimpan...' : 'Simpan'}
         </button>
         <button
           type="button"

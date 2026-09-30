@@ -3,6 +3,8 @@ import type { MetadataRoute } from 'next'
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://your-domain.vercel.app'
 
+/** sitemap.xml via Next.js metadata route convention — di-generate
+ *  otomatis di /sitemap.xml. */
 export default function sitemap(): MetadataRoute.Sitemap {
   // Single-page portfolio — hanya satu entri. Kalau nanti ditambah
   // halaman lain (mis. blog), tambahkan array item di sini.

@@ -2,11 +2,16 @@
 
 import { motion, useScroll, useSpring } from 'framer-motion'
 
+/**
+ * Garis tipis di puncak viewport yang menunjukkan progress scroll
+ * halaman (0% di atas, 100% di paling bawah). Dipasang sekali di
+ * page.tsx, posisinya fixed jadi selalu terlihat terlepas dari scroll.
+ */
 export default function ScrollProgress() {
   const { scrollYProgress } = useScroll()
   // useSpring smooths the raw scroll fraction so the bar doesn't feel
   // jittery on fast/trackpad scrolling.
-  const scaleX = useSpring(scrollYProgress, {
+  const smoothedScrollProgress = useSpring(scrollYProgress, {
     stiffness: 200,
     damping: 30,
     restDelta: 0.001,
@@ -15,7 +20,7 @@ export default function ScrollProgress() {
   return (
     <motion.div
       style={{
-        scaleX,
+        scaleX: smoothedScrollProgress,
         backgroundImage:
           'linear-gradient(to right, var(--gradient-from), var(--gradient-via), var(--gradient-to))',
       }}

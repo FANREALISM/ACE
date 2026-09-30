@@ -2,6 +2,15 @@
 
 import { useEffect } from 'react'
 
+/**
+ * Error boundary halaman (Next.js App Router error.tsx convention) —
+ * menangkap error React yang tidak tertangani di mana pun dalam tree
+ * halaman ini, menampilkan UI fallback yang konsisten dengan desain
+ * situs (bukan halaman crash generik Next.js).
+ *
+ * `error` dan `reset` adalah nama prop yang WAJIB persis seperti ini —
+ * ini konvensi Next.js sendiri, bukan pilihan penamaan bebas.
+ */
 export default function Error({
   error,
   reset,

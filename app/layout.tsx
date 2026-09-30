@@ -6,12 +6,12 @@ import { ThemeProvider } from '@/lib/theme/ThemeProvider'
 import CommandPalette from '@/components/ui/CommandPalette'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const spaceGrotesk = Space_Grotesk({
+const interFont = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const spaceGroteskFont = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-space-grotesk',
 })
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMonoFont = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-jetbrains-mono',
 })
@@ -30,8 +30,19 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#000000',
+  // viewportFit: 'cover' membuat konten bisa meluas ke area di belakang
+  // notch/Dynamic Island (bukan cuma dibatasi kotak aman browser),
+  // supaya env(safe-area-inset-*) di CSS bisa dipakai untuk padding yang
+  // benar-benar akurat menghindari notch — tanpa ini, env() selalu
+  // resolve ke 0 dan tidak ada efeknya sama sekali.
+  viewportFit: 'cover',
 }
 
+/**
+ * Root layout — dipasang sekali, membungkus SEMUA route di situs
+ * (halaman publik dan /secret-cmd admin). Tempat font, provider global
+ * (tema, bahasa), command palette, dan Analytics dipasang.
+ */
 export default function RootLayout({
   children,
 }: {
@@ -41,7 +52,7 @@ export default function RootLayout({
     <html
       lang="id"
       suppressHydrationWarning
-      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      className={`${interFont.variable} ${spaceGroteskFont.variable} ${jetbrainsMonoFont.variable}`}
     >
       <body className="bg-black text-white antialiased">
         {/* Anti-flash: baca localStorage & set data-theme SEBELUM React
@@ -54,12 +65,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var saved = localStorage.getItem('portfolio-theme');
-                var theme = saved === 'light' || saved === 'dark'
-                  ? saved
+                var savedTheme = localStorage.getItem('portfolio-theme');
+                var resolvedTheme = savedTheme === 'light' || savedTheme === 'dark'
+                  ? savedTheme
                   : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-                document.documentElement.setAttribute('data-theme', theme);
-              } catch (e) {}
+                document.documentElement.setAttribute('data-theme', resolvedTheme);
+              } catch (themeDetectionError) {}
             `,
           }}
         />

@@ -12,6 +12,13 @@ interface ProjectFormProps {
   onCancel?: () => void
 }
 
+/**
+ * Form admin untuk satu proyek — judul/deskripsi/link/tech-stack, plus
+ * section case study opsional yang bisa dilipat (details/summary), dan
+ * checkbox is_featured. Dipakai untuk create DAN edit lewat prop
+ * `initial` yang sama; `onCancel` opsional karena halaman create tidak
+ * selalu butuh tombol batal.
+ */
 export default function ProjectForm({
   initial,
   onSubmit,
@@ -29,32 +36,49 @@ export default function ProjectForm({
     initial?.tech_stack?.join(', ') ?? ''
   )
   const [isFeatured, setIsFeatured] = useState(initial?.is_featured ?? false)
-  const [saving, setSaving] = useState(false)
-  const [translating, setTranslating] = useState(false)
-  const [translateError, setTranslateError] = useState<string | null>(null)
+  const [caseStudyProblem, setCaseStudyProblem] = useState(
+    initial?.case_study_problem ?? ''
+  )
+  const [caseStudyApproach, setCaseStudyApproach] = useState(
+    initial?.case_study_approach ?? ''
+  )
+  const [caseStudyTradeoff, setCaseStudyTradeoff] = useState(
+    initial?.case_study_tradeoff ?? ''
+  )
+  const [caseStudyLearnings, setCaseStudyLearnings] = useState(
+    initial?.case_study_learnings ?? ''
+  )
+  const [isSaving, setIsSaving] = useState(false)
+  const [isTranslating, setIsTranslating] = useState(false)
+  const [translateErrorMessage, setTranslateErrorMessage] = useState<
+    string | null
+  >(null)
 
   async function handleAutoTranslate() {
     if (!description.trim()) {
-      setTranslateError('Isi deskripsi Indonesia dulu sebelum translate.')
+      setTranslateErrorMessage('Isi deskripsi Indonesia dulu sebelum translate.')
       return
     }
-    setTranslating(true)
-    setTranslateError(null)
+    setIsTranslating(true)
+    setTranslateErrorMessage(null)
     try {
-      const result = await translateToEnglish(description)
-      setDescriptionEn(result)
-    } catch (err) {
-      setTranslateError(
-        err instanceof Error ? err.message : 'Gagal translate.'
+      const translatedText = await translateToEnglish(description)
+      setDescriptionEn(translatedText)
+    } catch (caughtError) {
+      setTranslateErrorMessage(
+        caughtError instanceof Error ? caughtError.message : 'Gagal translate.'
       )
     } finally {
-      setTranslating(false)
+      setIsTranslating(false)
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
+  /** Form ini dipakai untuk create DAN edit — dibedakan lewat ada/tidaknya
+   *  prop `initial` dan `onCancel` (halaman create tidak selalu butuh
+   *  tombol batal). */
+  async function handleSubmit(formEvent: React.FormEvent) {
+    formEvent.preventDefault()
+    setIsSaving(true)
     await onSubmit({
       title,
       title_en: null,
@@ -65,12 +89,16 @@ export default function ProjectForm({
       github_url: githubUrl || null,
       tech_stack: techStack
         .split(',')
-        .map((t) => t.trim())
+        .map((techItem) => techItem.trim())
         .filter(Boolean),
       is_featured: isFeatured,
+      case_study_problem: caseStudyProblem || null,
+      case_study_approach: caseStudyApproach || null,
+      case_study_tradeoff: caseStudyTradeoff || null,
+      case_study_learnings: caseStudyLearnings || null,
       display_order: initial?.display_order ?? 0,
     })
-    setSaving(false)
+    setIsSaving(false)
   }
 
   return (
@@ -81,7 +109,7 @@ export default function ProjectForm({
         </label>
         <input
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(changeEvent) => setTitle(changeEvent.target.value)}
           required
           className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
         />
@@ -91,7 +119,7 @@ export default function ProjectForm({
         <label className="block text-sm text-white/50 mb-1">Deskripsi</label>
         <textarea
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(changeEvent) => setDescription(changeEvent.target.value)}
           required
           rows={3}
           className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
@@ -106,22 +134,22 @@ export default function ProjectForm({
           <button
             type="button"
             onClick={handleAutoTranslate}
-            disabled={translating}
+            disabled={isTranslating}
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-400/30 text-purple-300 hover:bg-purple-500/20 transition-colors disabled:opacity-50"
           >
             <Languages size={13} />
-            {translating ? 'Menerjemahkan...' : 'Auto-translate to EN'}
+            {isTranslating ? 'Menerjemahkan...' : 'Auto-translate to EN'}
           </button>
         </div>
         <textarea
           value={descriptionEn}
-          onChange={(e) => setDescriptionEn(e.target.value)}
+          onChange={(changeEvent) => setDescriptionEn(changeEvent.target.value)}
           rows={3}
           placeholder="Kosong = fallback ke deskripsi Indonesia saat visitor pilih EN"
           className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-purple-400"
         />
-        {translateError && (
-          <p className="text-xs text-red-400 mt-1">{translateError}</p>
+        {translateErrorMessage && (
+          <p className="text-xs text-red-400 mt-1">{translateErrorMessage}</p>
         )}
       </div>
 
@@ -129,7 +157,7 @@ export default function ProjectForm({
         <ImageUpload
           bucket="project-images"
           currentUrl={imageUrl || null}
-          onUploaded={(url) => setImageUrl(url)}
+          onUploaded={(uploadedUrl) => setImageUrl(uploadedUrl)}
           label="Upload Gambar Proyek"
         />
         <div>
@@ -138,7 +166,7 @@ export default function ProjectForm({
           </label>
           <input
             value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
+            onChange={(changeEvent) => setImageUrl(changeEvent.target.value)}
             placeholder="https://..."
             className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
           />
@@ -151,7 +179,7 @@ export default function ProjectForm({
         </label>
         <input
           value={techStack}
-          onChange={(e) => setTechStack(e.target.value)}
+          onChange={(changeEvent) => setTechStack(changeEvent.target.value)}
           placeholder="React, Tailwind, Supabase"
           className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
         />
@@ -161,7 +189,7 @@ export default function ProjectForm({
         <input
           type="checkbox"
           checked={isFeatured}
-          onChange={(e) => setIsFeatured(e.target.checked)}
+          onChange={(changeEvent) => setIsFeatured(changeEvent.target.checked)}
           className="w-4 h-4 accent-cyan-400"
         />
         <span className="text-sm text-white/70">
@@ -177,7 +205,7 @@ export default function ProjectForm({
           </label>
           <input
             value={projectUrl}
-            onChange={(e) => setProjectUrl(e.target.value)}
+            onChange={(changeEvent) => setProjectUrl(changeEvent.target.value)}
             className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
           />
         </div>
@@ -187,19 +215,82 @@ export default function ProjectForm({
           </label>
           <input
             value={githubUrl}
-            onChange={(e) => setGithubUrl(e.target.value)}
+            onChange={(changeEvent) => setGithubUrl(changeEvent.target.value)}
             className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
           />
         </div>
       </div>
 
+      <details className="rounded-lg border border-white/10 overflow-hidden">
+        <summary className="px-4 py-3 bg-black/40 cursor-pointer text-sm text-white/70 hover:text-white transition-colors select-none">
+          Case Study (opsional) — untuk 1-2 proyek unggulan yang mau
+          ditulis lebih dalam
+        </summary>
+        <div className="p-4 space-y-4 border-t border-white/10">
+          <p className="text-xs text-white/40">
+            Isi minimal satu field di bawah untuk memunculkan tombol
+            "Read Case Study" di kartu proyek, membuka halaman tersendiri
+            di <code className="text-white/60">/projects/[id]</code>.
+            Kosongkan semua kalau proyek ini tidak perlu case study.
+          </p>
+          <div>
+            <label className="block text-sm text-white/50 mb-1">
+              The Problem
+            </label>
+            <textarea
+              value={caseStudyProblem}
+              onChange={(changeEvent) => setCaseStudyProblem(changeEvent.target.value)}
+              rows={3}
+              placeholder="Masalah apa yang proyek ini selesaikan? Kenapa itu penting?"
+              className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-white/50 mb-1">
+              The Approach
+            </label>
+            <textarea
+              value={caseStudyApproach}
+              onChange={(changeEvent) => setCaseStudyApproach(changeEvent.target.value)}
+              rows={3}
+              placeholder="Bagaimana kamu mendekati masalahnya? Keputusan teknis apa yang diambil?"
+              className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-white/50 mb-1">
+              The Tradeoff
+            </label>
+            <textarea
+              value={caseStudyTradeoff}
+              onChange={(changeEvent) => setCaseStudyTradeoff(changeEvent.target.value)}
+              rows={3}
+              placeholder="Tradeoff nyata yang kamu ambil — bukan cuma 'semua berjalan lancar'. Apa yang dikorbankan?"
+              className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-white/50 mb-1">
+              What I'd Do Differently
+            </label>
+            <textarea
+              value={caseStudyLearnings}
+              onChange={(changeEvent) => setCaseStudyLearnings(changeEvent.target.value)}
+              rows={3}
+              placeholder="Dengan yang kamu tahu sekarang, apa yang akan diubah?"
+              className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+            />
+          </div>
+        </div>
+      </details>
+
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={saving}
+          disabled={isSaving}
           className="px-6 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
         >
-          {saving ? 'Menyimpan...' : 'Simpan'}
+          {isSaving ? 'Menyimpan...' : 'Simpan'}
         </button>
         {onCancel && (
           <button

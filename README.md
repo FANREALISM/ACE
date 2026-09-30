@@ -57,6 +57,9 @@ jalankan `schema.sql` dulu, baru sisanya sesuai urutan file di bawah.
 - [ ] `supabase/add_cv_and_availability.sql` — kolom cv_url + is_available, bucket resume
 - [ ] `supabase/add_skills_table.sql` — tabel skills (tech stack section)
 - [ ] `supabase/add_avatar_size.sql` — kolom avatar_size di profile (Small/Medium/Large/XL)
+- [ ] `supabase/add_certificate_expiry_credential_id.sql` — expiry_date + credential_id di certificates
+- [ ] `supabase/add_case_study_fields.sql` — 4 kolom opsional case study di projects
+- [ ] `supabase/add_contact_messages.sql` — tabel contact_messages (form kontak publik)
 
 ## Fitur yang sudah dibangun tapi tidak pernah tersambung (baru diperbaiki)
 
@@ -153,6 +156,212 @@ mobile) tetap statis hitam (`viewport.themeColor` di layout.tsx) — tidak
 otomatis ikut toggle manual, cuma ikut `prefers-color-scheme` OS kalau
 mau diperluas nanti.
 
+## Bubble preview: lebih besar dari card, dan performa
+
+Tiga masalah terpisah, ditangani terpisah:
+
+**1. Bubble kekecilan** — sebelumnya lebar tetap 320px terlepas dari
+ukuran card. Sekarang lebar bubble = 1.35x lebar card yang di-hover,
+diukur langsung lewat `getBoundingClientRect()` saat mouse masuk (bukan
+angka tebakan) — jadi konsisten lebih besar dari card aslinya di semua
+breakpoint grid (1/2/3 kolom).
+
+**2. Hero menu hilang terlalu cepat di mobile** — root cause: fade
+opacity dihitung dari `scrollY` piksel absolut dibanding konstanta tetap
+500px, TIDAK PEDULI tinggi viewport. Di layar mobile yang pendek, 500px
+itu porsi scroll yang jauh lebih besar relatif ke tinggi device
+dibanding di desktop, jadi terasa "buru-buru hilang padahal baru
+discroll sedikit". Diperbaiki jadi pakai `scrollYProgress` relatif ke
+tinggi section Hero itu sendiri (`useScroll({ target: heroRef })`) —
+proporsional di semua ukuran layar. Threshold navbar (`MorphingNavbar`)
+punya bug yang sama (piksel absolut `[350, 550]`), ikut diperbaiki jadi
+proporsional ke `window.innerHeight`.
+
+**3. "Berat" saat dibuka & discroll** — tiga penyebab konkret, bukan
+optimisasi generik:
+- `backdrop-blur-xl` (24px) di `.glass-card`/`.glass-nav` dipakai di
+  BELASAN elemen sekaligus (tiap project card, certificate card, navbar)
+  — `backdrop-filter` memaksa browser re-composite area di belakangnya
+  terus-menerus selama scroll, dan biayanya kalikan jumlah elemen.
+  Dikurangi ke `backdrop-blur-md` (12px) — masih kelihatan "frosted
+  glass", radius sampling yang harus dihitung jauh lebih kecil.
+- Glow circle dekoratif di Hero pakai `blur-[130px]`/`blur-[110px]` —
+  salah satu operasi CSS paling mahal yang ada, dan aktif render
+  sepanjang Hero kelihatan (praktis seluruh initial load). Dikurangi ke
+  `blur-[60px]`/`blur-[50px]`. Layer scanline (garis tipis berulang 3px)
+  dihapus total — kontribusi visualnya minim di atas grid lines yang
+  sudah ada, tapi butuh kalkulasi tiling di seluruh viewport.
+- Semua `<img>` di bawah fold (project cards, certificate cards, About
+  section images, avatar kecil di navbar) sekarang `loading="lazy"
+  decoding="async"` — sebelumnya SEMUA gambar fetch langsung saat page
+  load, termasuk yang di luar layar. Avatar utama di Hero (di atas fold,
+  elemen LCP) sengaja TIDAK lazy — malah ditambah `fetchPriority="high"`
+  supaya makin cepat muncul, bukan makin lambat.
+- Bonus yang ikut kebawa dari fix bubble: `onMouseMove` untuk tracking
+  kursor bubble di-throttle lewat `requestAnimationFrame` (maksimal satu
+  update state per frame), bukan setiap raw mousemove event yang bisa
+  fire puluhan-ratusan kali/detik.
+
+Yang SENGAJA tidak disentuh: `backdrop-blur-xl` di halaman login admin
+(`/secret-cmd/login`) — cuma satu panel, bukan belasan card sekaligus,
+biayanya sudah kecil dan di luar scope (halaman admin, bukan portofolio
+publik).
+
+## Klik project → langsung ke website, bukan modal lagi
+
+Modal untuk Projects sudah dihapus total (import `Modal` juga dicabut
+dari `ProjectsGrid.tsx` — bukan cuma disembunyikan). Klik card sekarang:
+
+1. Kalau `project_url` (input "Live Demo URL", sudah ada dari sebelumnya
+   di admin form) diisi → buka itu di tab baru.
+2. Kalau `project_url` kosong tapi `github_url` diisi → fallback ke
+   GitHub, supaya klik tidak jadi aksi mati.
+3. Kalau dua-duanya kosong → card tidak clickable sama sekali (cursor
+   normal, bukan pointer) — tidak ada tujuan untuk dituju.
+
+Hover preview bubble TIDAK berubah — itu fitur terpisah dari perilaku
+klik, tetap jalan seperti sebelumnya.
+
+Link "Live Demo" kecil di dalam card sengaja TIDAK dihapus meski sekarang
+redundant dengan klik card (dua-duanya menuju URL yang sama) — masih ada
+untuk kejelasan visual eksplisit dan sebagai target klik yang lebih kecil
+kalau kamu cuma mau ke situ, bukan trigger seluruh card.
+
+Certificates TIDAK berubah — klik card certificate tetap membuka modal
+seperti sebelumnya, sesuai instruksi.
+
+## Info sertifikat lebih lengkap (opsional)
+
+Field baru di `CertificateForm.tsx`, keduanya OPSIONAL:
+
+- **Tanggal Kedaluwarsa** — untuk sertifikat yang punya masa berlaku
+  (AWS, Azure, dst). Modal certificate otomatis menampilkan badge
+  "Expired" kalau tanggal ini sudah lewat hari ini.
+- **Credential ID** — nomor/ID sertifikat, terpisah dari URL verifikasi
+  (banyak penerbit sertifikat kasih keduanya secara terpisah).
+
+Wajib jalankan `supabase/add_certificate_expiry_credential_id.sql`.
+Field lama (`issue_date`, `credential_url`) tidak berubah — sudah
+opsional dari sebelumnya, cuma ditambah label "(opsional)" eksplisit di
+form biar jelas, dan "Judul"/"Penerbit" dilabel "(wajib)" untuk kontras.
+
+## MIDDLEWARE_INVOCATION_TIMEOUT — kemungkinan besar bukan bug kode
+
+Error ini beda dari `ERR_TOO_MANY_REDIRECTS` sebelumnya — ini artinya
+`middleware.ts` HANG sampai Vercel sendiri yang membunuh eksekusinya,
+bukan masalah redirect loop. Root cause paling mungkin, **dan ini di
+sisi konfigurasi kamu, bukan sesuatu yang bisa saya perbaiki dari sini**:
+
+1. **Cek dulu: project Supabase kamu paused?** Tier gratis Supabase
+   auto-pause project setelah ~1 minggu tidak ada aktivitas. Buka
+   Supabase Dashboard — kalau ada banner "Project Paused", klik resume.
+   Ini penyebab PALING UMUM untuk error jenis ini.
+2. **Cek: environment variables benar-benar ke-set di Vercel?**
+   `.env.local` cuma jalan pas development lokal — Vercel butuh
+   `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY` diisi
+   terpisah di Project Settings → Environment Variables di dashboard
+   Vercel. Kalau belum pernah diisi di sana, middleware coba connect ke
+   URL yang salah/kosong dan bisa hang.
+
+Kode yang saya perbaiki (`middleware.ts` dan `(protected)/layout.tsx`)
+sebelumnya melakukan `await supabase.auth.getUser()` polos — tanpa
+timeout, tanpa try/catch. Kalau Supabase lambat merespons atau
+unreachable, call itu bisa hang sampai batas eksekusi Vercel sendiri,
+persis error di screenshot. Sekarang dibungkus `Promise.race` dengan
+timeout (5 detik di middleware, 8 detik di layout):
+
+- **Middleware**: kalau timeout, fail OPEN (request tetap lanjut) — ini
+  aman karena middleware cuma bertugas refresh token, bukan gerbang auth
+  sesungguhnya.
+- **Protected layout**: kalau timeout, fail TERTUTUP (redirect ke
+  login) — ini gerbang auth yang sebenarnya, jadi timeout harus
+  diperlakukan sebagai "belum login", bukan "boleh masuk".
+
+**Yang perlu kamu tahu**: fix ini menghilangkan gejala hang/timeout-nya,
+tapi kalau root cause-nya memang Supabase project paused, kamu tetap
+tidak akan bisa login sampai project-nya di-resume — bedanya sekarang
+kamu akan lihat halaman login dengan pesan error yang jelas, bukan
+seluruh halaman freeze 504.
+
+## Audit bug (setelah sandbox reset)
+
+Recovery dari `/mnt/user-data/outputs/portfolio.zip` (state terakhir),
+lalu full audit: `tsc --noEmit`, cross-check semua `t.xxx.yyy` dictionary
+key vs definisi, cross-check semua class warna publik vs override tema
+light, cek `console.log`/TODO/`@ts-ignore` leftover, cek React key props,
+full `next build`. Yang ditemukan dan diperbaiki:
+
+- **rAF bubble-tracking tidak di-cleanup saat unmount** — di
+  `ProjectsGrid.tsx`/`CertificatesSection.tsx`: kalau kamu hover project
+  card (rAF pending dari mousemove), lalu langsung pindah ke `/secret-cmd`
+  lewat command palette SAAT rAF itu belum sempat jalan, callback-nya
+  tetap fire dan panggil `setState` di komponen yang sudah unmounted —
+  React warning, berpotensi jadi error di versi React mendatang. Reachable
+  bug beneran, bukan teoretis (ada jalur ⌘K→admin yang bisa memicu ini
+  sambil hover). Fix: `cancelAnimationFrame` di cleanup `useEffect`.
+- **Badge "Expired" sertifikat rawan salah timezone** — `new
+  Date(expiry_date) < new Date()` membandingkan Date object: sisi kiri
+  di-parse sebagai UTC tengah malam, sisi kanan waktu lokal pengunjung —
+  bisa meleset sehari pas persis di tanggal batasnya tergantung timezone.
+  Diganti perbandingan string ISO (`YYYY-MM-DD`) langsung, yang aman
+  dibandingkan leksikografis tanpa isu parsing timezone sama sekali.
+- **`hero.ctaButton` dictionary key mati** — didefinisikan di ketiga file
+  i18n tapi tidak pernah dipakai (sisa dari desain Hero versi CTA-button
+  sebelum jadi menu vertikal). Dihapus.
+- **Admin certificates list tidak menampilkan status expired** — cuma
+  bisa tahu sertifikat mana yang sudah lewat masa berlaku dengan buka
+  Edit satu-satu. Ditambahkan badge "Expired" kecil di list, konsisten
+  dengan yang sudah ada di modal publik.
+
+Yang dicek dan TERNYATA BUKAN bug (false positive dari script audit
+sendiri, dikonfirmasi manual): dictionary key mismatch antara id.ts/en.ts
+(regex-ku salah baca baris yang pakai double-quote karena ada apostrof di
+"Let's") — TypeScript sendiri sudah menjamin ini lewat structural typing
+terhadap interface `Dictionary` yang sama, jauh lebih ketat dari script
+manual manapun.
+
+## Empat fitur baru: case study, activity feed, contact form, OG image
+
+**1. Case study untuk proyek unggulan** — 4 field opsional baru di
+`ProjectForm.tsx` (collapsible, di bawah field lain): The Problem, The
+Approach, The Tradeoff, What I'd Do Differently. Isi minimal satu untuk
+memunculkan tombol "Read Case Study →" di kartu proyek, membuka halaman
+tersendiri di `/projects/[id]` (bukan modal — modal proyek sudah dihapus
+di revisi sebelumnya karena klik card sekarang navigasi ke website).
+Halaman ini server-rendered, punya `generateMetadata` sendiri, dan akan
+404 kalau proyek tidak ditemukan ATAU tidak ada satupun field case study
+diisi (daripada nampilin halaman kosong).
+
+**2. "Recently added" di Footer** — pakai `created_at` yang SUDAH ADA di
+projects/certificates, tidak ada kolom baru. Digabung, diurutkan, ambil 3
+teratas. Sengaja dilabel "Recently added" bukan "Last updated" — tidak
+ada tracking edit yang sesungguhnya (tidak ada kolom `updated_at`),
+mengklaim itu akan menyesatkan.
+
+**3. Contact form** — tabel baru `contact_messages`, RLS: insert terbuka
+untuk publik (memang tujuannya), select/update/delete cuma admin. Form
+di `ContactForm.tsx` punya honeypot field untuk bot dasar (posisi
+off-screen, bukan display:none — beberapa bot skip field yang
+display:none tapi tetap isi yang cuma diposisikan di luar layar). Muncul
+di Contact section di belakang toggle "Atau kirim pesan lewat form" —
+sengaja tidak langsung tampil supaya section tetap minimal sesuai
+keputusan desain sebelumnya. Admin baca/tandai-dibaca/hapus pesan di
+`/secret-cmd/messages` (link baru di nav admin).
+
+**PENTING soal spam**: endpoint insert publik tanpa CAPTCHA itu target
+empuk untuk bot. Honeypot cuma baseline. Kalau mulai kebanjiran spam,
+tambahkan Cloudflare Turnstile (gratis, tidak butuh kartu kredit) —
+belum diimplementasikan di sini, di luar scope permintaan awal.
+
+**4. OG image dinamis** — `app/opengraph-image.tsx` generate gambar
+1200×630 dari nama+role (pakai `next/og`, jalan di Edge Runtime),
+bukan cuma crop foto profil jadi kotak. **Bug yang saya temukan &
+perbaiki sekalian**: `generateMetadata` di `app/page.tsx` sebelumnya
+hardcode `openGraph.images: [avatar_url]` — metadata eksplisit itu
+MENANG atas file convention, jadi kalau tidak dihapus, template OG baru
+ini tidak akan pernah kepakai sama sekali (ke-override diam-diam).
+Sudah dihapus dari `generateMetadata`.
+
 ## Tombol SYSTEM_ADMIN dihapus dari menu publik
 
 Diganti dua jalur, keduanya lewat keyboard:
@@ -227,7 +436,66 @@ tersimpan kalau ada bug di form nanti.
    LinkedIn, Email tidak punya nama yang bisa diumumkan screen reader.
    Diperbaiki, sekaligus menambahkan WhatsApp.
 
+## SEO & Optimisasi Lanjutan
+
+Audit ini fokus ke 3 gap konkret yang ditemukan lewat pengecekan
+langsung (grep ke source, bukan tebakan):
+
+**1. next/image dikonfigurasi tapi tidak dipakai sama sekali.**
+`next.config.js` sudah punya `remotePatterns` wildcard sejak awal, tapi
+10 SEMUA gambar di situs (public + admin) masih pakai `<img>` polos.
+Dikonversi semua — kecuali `app/opengraph-image.tsx`, yang SENGAJA tetap
+`<img>` karena itu jalan di konteks Satori/next-og, bukan browser, dan
+`next/image` tidak kompatibel di situ.
+
+Dua pola dipakai tergantung konteks:
+- **`fill`** (10 lokasi) — untuk gambar di container yang ukurannya
+  responsif/fluid (aspect-video, aspect-[4/3], avatarSizeClass). Wajib
+  ada ancestor `position: relative` — ditambahkan ke tiap wrapper div
+  yang belum punya, diverifikasi manual satu-satu (7 file, 10 usage)
+  karena ini requirement runtime Next.js yang tidak ditangkap `tsc`.
+- **`width`/`height` eksplisit** (2 lokasi: avatar kecil di
+  MorphingNavbar, thumbnail admin) — untuk gambar ukuran tetap, bukan
+  fluid, jadi tidak butuh wrapper `relative` tambahan.
+
+Manfaat nyata: WebP/AVIF otomatis (bukan cuma format asli upload),
+responsive `srcset` berdasarkan `sizes` prop, dan dimensi eksplisit yang
+mencegah layout shift (CLS) — sebelumnya gambar bisa "melompat" saat
+selesai load karena browser tidak tahu ukurannya sampai gambar benar-
+benar termuat.
+
+**Bug yang saya buat & tangkap sendiri saat mengerjakan ini**: satu edit
+awal di `About.tsx` cuma mengganti atribut di dalam tag `<img>`,
+meninggalkan tag pembuka `<img` menggantung di atas `<Image>` yang baru
+— JSX yang rusak secara sintaks. Ketahuan karena saya buka lagi file-nya
+untuk verifikasi (bukan asumsi editnya berhasil), diperbaiki sebelum
+lanjut ke file berikutnya. Setelah insiden itu saya ganti pendekatan:
+lihat blok lengkap dulu sebelum edit file gambar mana pun, bukan ganti
+atribut sebagian.
+
+**2. Halaman admin (`/secret-cmd/*`) cuma dilindungi `robots.txt`.**
+Itu cuma instruksi ke crawler yang PATUH — kalau ada crawler yang
+mengabaikannya, atau halaman ke-link dari luar dan ter-crawl lewat jalur
+lain, `robots.txt` tidak menghentikannya. Ditambahkan `app/secret-cmd/layout.tsx`
+baru — satu file yang membungkus SEMUA route di bawah `/secret-cmd`
+(login DAN semua halaman protected sekaligus, karena posisinya satu
+level di atas keduanya), isinya cuma `export const metadata` dengan
+`robots: { index: false, follow: false }`. Lapisan kedua, bukan
+pengganti `robots.txt` yang sudah ada.
+
+**3. Halaman case study (`/projects/[id]`) tidak punya Open Graph sama
+sekali.** Sebelumnya cuma title+description — kalau di-share di
+WhatsApp/LinkedIn, preview-nya jatuh ke og:image DEFAULT situs (foto
+profil), bukan gambar proyek yang sebenarnya relevan untuk konten itu.
+Ditambahkan: canonical URL (`alternates.canonical`), Open Graph lengkap
+dengan `project.image_url` sebagai gambar (kalau ada), Twitter Card, dan
+JSON-LD `CreativeWork` structured data (nama, deskripsi, tech stack
+sebagai keywords) supaya Google memahami ini sebagai konten
+portofolio/karya, bukan halaman teks generik.
+
 ## Yang ditambahkan (fitur baru, bukan perbaikan bug)
+
+
 
 - **Kontak WhatsApp** — field baru di Settings, tampil di Contact section
   sebagai link `wa.me`.
@@ -259,6 +527,165 @@ http://localhost:3000/secret-cmd untuk login admin (akan redirect ke
 npm run build
 npm run start
 ```
+
+## Kompatibilitas Mobile & Device Lain
+
+Audit konkret — cek langsung ke kode, bukan asumsi "harusnya sudah
+responsive karena pakai Tailwind". 6 gap ditemukan dan diperbaiki:
+
+**1. iOS Safari auto-zoom di SEMUA form field.** 42 elemen
+`<input>`/`<textarea>` di seluruh situs (public + admin) tidak punya
+class ukuran font eksplisit — jatuh ke default browser (~13px). Di
+bawah 16px, iOS Safari otomatis zoom-in begitu field disentuh, perilaku
+yang tidak bisa dimatikan lewat viewport meta (ini sengaja dikunci Apple
+sebagai fitur aksesibilitas). Satu aturan CSS terpusat di
+`globals.css` (`input, textarea, select { font-size: 16px }`) — bukan
+edit 42 file satu-satu.
+
+**2. Safe-area-inset untuk notch/Dynamic Island.** `viewport.viewportFit
+= 'cover'` ditambahkan di `layout.tsx` (tanpa ini, `env(safe-area-inset-*)`
+di CSS selalu resolve ke 0, tidak ada efeknya). Padding safe-area
+ditambahkan ke `MorphingNavbar` (satu-satunya elemen fixed full-width
+edge-to-edge dengan konten interaktif — risiko nyata di landscape, di
+mana notch bisa menjorok dari SAMPING). `CommandPalette`/`Modal` DICEK
+tapi TIDAK diberi padding tambahan — keduanya sudah centered dengan
+margin `px-4`/`p-4 md:p-8`, jadi risikonya rendah, menambah padding di
+situ cuma kerja tanpa manfaat nyata.
+
+**3-5. Touch target di bawah standar minimum 44×44px** (Apple/Google
+HIG) — `ThemeToggle` compact (32px), `LanguageSwitcher` compact (~28px),
+hamburger mobile di `MorphingNavbar` (36px), tombol close `Modal`
+(34px): semua dinaikkan ke `min-w/h-11` (44px) via flex centering —
+ukuran visual ikon/teks tidak berubah, cuma area yang bisa di-tap yang
+diperbesar. Tombol copy-email di `Contact.tsx` (24px, offender terkecil)
+SENGAJA cuma dinaikkan ke 36px, bukan 44px penuh — itu badge sekunder
+menempel di atas link Mail utama yang sudah 56px, dan WCAG 2.5.5 sendiri
+punya pengecualian untuk target kecil kalau ada kontrol setara yang
+lebih besar di halaman yang sama.
+
+**6. Bubble preview bisa overflow di viewport sempit tapi hover-capable**
+(mis. iPad dengan trackpad, tablet Windows kecil — perangkat yang lolos
+`useHoverCapable()` tapi punya layar sempit). Lebar bubble (1.35x lebar
+card) tidak pernah di-clamp ke lebar viewport — di device seperti itu,
+`bubbleWidth` bisa lebih lebar dari viewport-nya sendiri, menghasilkan
+`left` negatif dan bubble terpotong sebagian di luar layar kiri. Fix:
+`clampedBubbleWidth` dihitung dulu sebelum posisi, di
+`ProjectsGrid.tsx` dan `CertificatesSection.tsx`.
+
+**Yang dicek dan TERNYATA aman** (dikonfirmasi, bukan diasumsikan): tidak
+ada elemen `fixed bottom-0` (jadi tidak ada risiko home-indicator iOS),
+tidak ada hardcoded `w-[Npx]` yang bisa memicu horizontal overflow di
+viewport 320px (iPhone SE).
+
+
+## Animasi & Interaktivitas Baru (tanpa menambah beban performa)
+
+Permintaan ini punya tegangan nyata dengan kerja optimisasi sebelumnya
+(backdrop-blur dikurangi, glow blur radius dipangkas, mousemove
+di-throttle) — jadi setiap penambahan di bawah ini dipilih SPESIFIK
+karena murah secara struktur, bukan cuma "kelihatan animasinya dikit
+jadi pasti ringan":
+
+**1. Spotlight cursor-follow di card Projects & Certificates.**
+Radial-gradient lembut yang mengikuti posisi kursor dalam card yang
+di-hover. Posisinya (`--spotlight-x`/`--spotlight-y`) di-update dengan
+`element.style.setProperty()` LANGSUNG ke DOM, BUKAN lewat React state —
+menyatu dengan `requestAnimationFrame` throttle yang sudah ada untuk
+bubble preview (satu rAF, dua efek, bukan listener terpisah yang
+bersaing). Kalau ini pakai `setState`, tiap gerakan mouse akan re-render
+seluruh grid; dengan direct DOM mutation, React sama sekali tidak tahu
+posisi spotlight berubah. Radial-gradient polos ITU SENDIRI murah — beda
+jauh dari `filter: blur()` yang mahal (itu yang dipangkas di revisi
+optimisasi sebelumnya); ini cuma definisi warna gradient, nol kalkulasi
+sampling blur tambahan.
+
+**2. Magnetic hover pada tombol utama** (`components/ui/MagneticButton.tsx`,
+baru) — tombol CV download di Hero dan tiga ikon kontak (WhatsApp/GitHub/
+LinkedIn) sedikit "tertarik" ke arah kursor lalu pegas kembali. Dipakai
+`useMotionValue`+`useSpring` dari Framer Motion, BUKAN React state —
+prinsip yang sama dengan spotlight: motion value Framer Motion menulis
+langsung ke `transform` CSS di luar siklus render React. Otomatis
+nonaktif total di perangkat tanpa hover asli lewat `useHoverCapable()` —
+di HP, komponen ini render statis, tidak ada listener mousemove
+terpasang sama sekali secara efektif.
+
+Sengaja TIDAK dipakai di tombol submit ContactForm (full-width,
+`inline-block` wrapper akan bentrok dengan `w-full`) atau tombol toggle
+"Atau kirim pesan lewat form" (link sekunder yang sengaja dibuat
+understated — efek magnetic yang flashy akan menarik perhatian ke
+sesuatu yang harusnya tetap diam-diam).
+
+**3. Stagger reveal nama di Hero** — tiap huruf nama muncul satu-satu
+saat halaman dimuat. Biaya SEKALI SAJA saat mount, tidak ada biaya
+berkelanjutan setelahnya (beda dari spotlight/magnetic yang aktif
+selama interaksi). **Detail aksesibilitas yang wajib**: teks yang
+dipecah huruf-per-huruf akan dibaca screen reader huruf demi huruf
+("A... F... F... A... N...") kalau tidak ditangani — elemen
+per-karakter diberi `aria-hidden="true"`, teks utuh aslinya ada di
+`aria-label` pada `<h1>` pembungkusnya.
+
+**4. Scale-on-hover di skill chip** — murni CSS (`hover:scale-105`),
+tanpa JavaScript sama sekali. Ini yang termurah dari semua penambahan:
+browser sudah menangani CSS `:hover` + `transition` secara native, tidak
+ada cost tambahan di luar yang sudah dilakukan browser untuk hover state
+apa pun.
+
+Semua animasi baru otomatis menghormati `prefers-reduced-motion` lewat
+`MotionConfig reducedMotion="user"` yang sudah terpasang global di
+`LanguageProvider.tsx` sejak revisi sebelumnya — tidak perlu pengaturan
+tambahan per-komponen.
+
+**Bug yang saya temukan & perbaiki sendiri saat mengerjakan ini**: draft
+awal spotlight card menambahkan `overflow-hidden` ke card supaya sudut
+gradient ikut membulat — tapi itu akan memotong badge "Featured" yang
+sengaja diposisikan sedikit di luar tepi card (`-top-2 -right-2`).
+Ketahuan sebelum di-build, diperbaiki dengan `rounded-2xl` di div
+spotlight itu sendiri, bukan `overflow-hidden` di parent.
+
+
+## Animasi Tambahan (revisi kedua, masih dengan batasan performa yang sama)
+
+Empat penambahan lagi, semuanya baru — beda dari spotlight/magnetic/
+stagger/scale-chip di revisi sebelumnya:
+
+**1. Parallax lembut di glow circle Hero.** Dua lingkaran dekoratif
+bergerak dengan kecepatan berbeda (60px vs -40px) saat scroll, kesan
+kedalaman bukan geser satu lapis datar. REUSE `heroScrollProgress` yang
+sudah ada untuk efek fade Hero — cuma nambah dua `useTransform` dari
+motion value yang sama, BUKAN scroll listener baru.
+
+**Bug yang ketemu & diperbaiki sebelum sempat jadi masalah**: lingkaran
+kedua sebelumnya punya class Tailwind statis `translate-x-32` (offset
+horizontal). Begitu ditambah `style={{ y: ... }}` dari Framer Motion di
+elemen yang sama, dua-duanya sama-sama menulis ke `transform` CSS —
+inline style Framer akan MENANG lewat specificity dan diam-diam
+menghapus offset horizontal dari class Tailwind. Ini persis kelas bug
+yang sama dengan masalah centering kursor jauh sebelumnya di percakapan
+ini. Fix: offset horizontal dipindah jadi `x: 128` di style Framer yang
+sama, supaya x dan y dikelola satu mekanisme, bukan campur Tailwind
+class + inline style di properti yang sama.
+
+**2. Underline animasi di link navbar** (`MorphingNavbar`) — garis tipis
+yang scale-in dari kiri saat hover. Murni CSS (`scale-x-0` ke
+`scale-x-100` lewat `group-hover`, `transform-only`), nol JavaScript,
+nol listener tambahan.
+
+**3. `whileTap` di card Project & Certificate** — sedikit mengecil
+(scale 0.98) SELAMA ditekan/diklik, otomatis kembali begitu dilepas.
+Framer Motion yang atur penuh, transform-only, tidak perlu state atau
+listener manual dari sisi kita.
+
+**4. Animasi gradient mengalir di semua heading `.text-gradient`** —
+`background-position` bergeser lambat (8 detik per siklus) di atas
+`background-size: 200%`. INI SATU-SATUNYA dari empat penambahan yang
+BUKAN murni `transform`/`opacity` — `background-position` memicu paint,
+bukan cuma composite. Durasinya sengaja dibuat lambat: pergeseran
+per-frame jadi kecil, browser bisa optimasi lebih baik, dan area yang
+di-repaint cuma teks heading (kecil), bukan background penuh halaman.
+`prefers-reduced-motion` OTOMATIS ter-cover lewat aturan global yang
+sudah ada di `globals.css` sejak revisi tema light/dark (aturan itu
+menargetkan SEMUA `animation-duration`, bukan cuma punya Framer Motion),
+tidak perlu override terpisah.
 
 ## Struktur Proyek
 

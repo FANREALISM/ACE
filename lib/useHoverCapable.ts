@@ -1,19 +1,37 @@
 import { useEffect, useState } from 'react'
 
-// Touch devices fire mouseenter/mouseleave in weird, inconsistent ways
-// (usually once, on tap, then never again until you tap elsewhere).
-// Gating hover-preview behind this hook prevents "ghost hover" bubbles
-// that appear on tap and never disappear on a phone.
+/**
+ * Mendeteksi apakah perangkat pengunjung benar-benar mendukung hover
+ * (mouse/trackpad) atau tidak (touchscreen).
+ *
+ * Kenapa ini perlu: perangkat sentuh menembak event mouseenter/mouseleave
+ * dengan cara yang aneh dan tidak konsisten (biasanya cuma sekali, saat
+ * disentuh, lalu tidak pernah lagi sampai user menyentuh elemen lain).
+ * Kalau fitur hover-preview (bubble preview di project/certificate card)
+ * tidak digerbangi lewat hook ini, hasilnya adalah "ghost hover" — bubble
+ * yang muncul saat disentuh lalu tidak pernah hilang di HP.
+ *
+ * @returns true kalau perangkat mendukung hover asli, false kalau tidak
+ * (mis. touchscreen) atau saat masih di server-render (sebelum useEffect
+ * jalan di client).
+ */
 export function useHoverCapable(): boolean {
-  const [canHover, setCanHover] = useState(false)
+  const [supportsHover, setSupportsHover] = useState(false)
 
   useEffect(() => {
-    const mq = window.matchMedia('(hover: hover) and (pointer: fine)')
-    setCanHover(mq.matches)
-    const listener = (e: MediaQueryListEvent) => setCanHover(e.matches)
-    mq.addEventListener('change', listener)
-    return () => mq.removeEventListener('change', listener)
+    const hoverMediaQuery = window.matchMedia(
+      '(hover: hover) and (pointer: fine)'
+    )
+    setSupportsHover(hoverMediaQuery.matches)
+
+    function handleMediaQueryChange(mediaQueryChangeEvent: MediaQueryListEvent) {
+      setSupportsHover(mediaQueryChangeEvent.matches)
+    }
+
+    hoverMediaQuery.addEventListener('change', handleMediaQueryChange)
+    return () =>
+      hoverMediaQuery.removeEventListener('change', handleMediaQueryChange)
   }, [])
 
-  return canHover
+  return supportsHover
 }
