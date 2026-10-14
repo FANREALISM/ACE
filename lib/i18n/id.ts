@@ -10,6 +10,7 @@ const id: Dictionary = {
     achievements: 'ACHIEVEMENTS',
     systemAdmin: 'SYSTEM_ADMIN',
     techStack: 'TECH_STACK',
+    timeline: 'TIMELINE',
   },
   hero: {
     roleFallback: 'SOFTWARE ENGINEER // REKAYASA PERANGKAT LUNAK',
@@ -17,6 +18,14 @@ const id: Dictionary = {
     availableBadge: 'Terbuka untuk kerja',
     unavailableBadge: 'Sedang tidak menerima proyek',
     downloadCv: 'Unduh CV',
+  },
+  timeline: {
+    label: 'TIMELINE_LOG',
+    heading: 'Karir &',
+    headingAccent: 'Pendidikan',
+    career: 'Karir',
+    education: 'Pendidikan',
+    present: 'Sekarang',
   },
   skills: {
     heading: 'Tech',

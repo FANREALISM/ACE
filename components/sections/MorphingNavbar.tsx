@@ -31,15 +31,18 @@ export default function MorphingNavbar({
   // karena komponen ini 'use client' dan baris ini jalan saat render
   // browser, bukan SSR pass pertama — tidak butuh useEffect karena nilai
   // ini cuma dipakai sebagai konstanta range, bukan re-computed tiap resize).
+  // Range digeser dari [0.4, 0.65] ke [0.7, 0.95] tinggi viewport supaya
+  // navbar baru muncul setelah Hero (yang kini bertahan lebih lama) mulai
+  // memudar — tidak bertumpuk dengan konten Hero yang masih terlihat.
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800
   const navbarOpacity = useTransform(
     scrollY,
-    [viewportHeight * 0.4, viewportHeight * 0.65],
+    [viewportHeight * 0.7, viewportHeight * 0.95],
     [0, 1]
   )
   const navbarTranslateY = useTransform(
     scrollY,
-    [viewportHeight * 0.4, viewportHeight * 0.65],
+    [viewportHeight * 0.7, viewportHeight * 0.95],
     [-16, 0]
   )
 

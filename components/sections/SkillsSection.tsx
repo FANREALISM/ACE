@@ -1,10 +1,10 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import * as Icons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Skill } from '@/lib/types'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
+import Reveal from '@/components/ui/Reveal'
 
 /** Cari komponen ikon Lucide berdasarkan nama string dari database.
  *  Fallback ke Code2 (bukan Cpu seperti About.tsx — dipilih beda supaya
@@ -16,53 +16,111 @@ function resolveIcon(iconName: string): LucideIcon {
   )
 }
 
+/** Jumlah minimum chip dalam satu "putaran" marquee. Kalau skill cuma
+ *  3–4, satu putaran akan lebih pendek dari lebar layar dan terlihat
+ *  ada celah kosong di ujung — makanya daftar diulang sampai cukup. */
+const MIN_CHIPS_PER_LOOP = 10
+
+/** Detik per chip. ~3.2s per chip ≈ 40px/detik dengan lebar chip rata-
+ *  rata — cukup pelan untuk dibaca, cukup gerak untuk terasa hidup. */
+const SECONDS_PER_CHIP = 3.2
+
+/** Ulangi daftar skill sampai minimal MIN_CHIPS_PER_LOOP. */
+function buildLoop(skills: Skill[]): Skill[] {
+  const loop: Skill[] = []
+  while (loop.length < MIN_CHIPS_PER_LOOP) loop.push(...skills)
+  return loop
+}
+
+function SkillChip({ skill }: { skill: Skill }) {
+  const SkillIcon = resolveIcon(skill.icon)
+  return (
+    <div
+      className="glass-card px-5 py-3 flex items-center gap-3 shrink-0 hover:border-cyan-400/40 transition-colors"
+      title={skill.category ?? undefined}
+    >
+      <SkillIcon size={16} className="text-cyan-300" aria-hidden="true" />
+      <span className="text-sm text-white/80 whitespace-nowrap">
+        {skill.name}
+      </span>
+    </div>
+  )
+}
+
 /**
- * Section "Tech Stack" — kumpulan chip skill dengan ikon, ditampilkan
- * sebagai awan tag yang wrap otomatis. Section ini hilang sepenuhnya
- * (return null) kalau belum ada skill diisi, bukan tampil kosong.
+ * Satu baris marquee. Track berisi DUA salinan identik dari daftar chip
+ * berdampingan; animasi menggeser track sejauh -50% (tepat satu salinan)
+ * lalu mengulang, sehingga lompatan reset tidak terlihat. Salinan kedua
+ * aria-hidden supaya screen reader tidak membaca setiap skill dua kali.
+ * Berhenti saat di-hover/fokus (dan saat disentuh di layar sentuh).
+ */
+function MarqueeRow({
+  skills,
+  isReversed,
+}: {
+  skills: Skill[]
+  isReversed: boolean
+}) {
+  const loopSkills = buildLoop(skills)
+  const durationSeconds = loopSkills.length * SECONDS_PER_CHIP
+
+  return (
+    <div className="marquee-row" role="group" tabIndex={0} aria-label="Skills">
+      <div
+        className={`marquee-track ${isReversed ? 'marquee-reverse' : ''}`}
+        style={{ ['--marquee-duration' as string]: `${durationSeconds}s` }}
+      >
+        <div className="marquee-group">
+          {loopSkills.map((skill, chipIndex) => (
+            <SkillChip key={`a-${skill.id}-${chipIndex}`} skill={skill} />
+          ))}
+        </div>
+        <div className="marquee-group" aria-hidden="true">
+          {loopSkills.map((skill, chipIndex) => (
+            <SkillChip key={`b-${skill.id}-${chipIndex}`} skill={skill} />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Section "Tech Stack" — carousel marquee tak berujung. Skill >= 8 dibagi
+ * ke dua baris yang bergerak berlawanan arah; kurang dari itu satu baris
+ * saja. Section ini hilang sepenuhnya (return null) kalau belum ada skill
+ * diisi, bukan tampil kosong.
  */
 export default function SkillsSection({ skills }: { skills: Skill[] }) {
   const { translations } = useLanguage()
 
   if (skills.length === 0) return null
 
-  return (
-    <section id="skills" className="py-32 px-6 max-w-5xl mx-auto scroll-mt-20">
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="text-3xl font-bold mb-16 text-center"
-      >
-        {translations.skills.heading}{' '}
-        <span className="text-gradient">
-          {translations.skills.headingAccent}
-        </span>
-      </motion.h2>
+  const useTwoRows = skills.length >= 8
+  const firstRowSkills = useTwoRows
+    ? skills.filter((_, skillIndex) => skillIndex % 2 === 0)
+    : skills
+  const secondRowSkills = useTwoRows
+    ? skills.filter((_, skillIndex) => skillIndex % 2 === 1)
+    : []
 
-      <div className="flex flex-wrap justify-center gap-4">
-        {skills.map((skill, skillIndex) => {
-          const SkillIcon = resolveIcon(skill.icon)
-          return (
-            <motion.div
-              key={skill.id}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              // Delay bertahap kecil per chip supaya kemunculannya
-              // terasa seperti gelombang, bukan semua chip muncul
-              // bersamaan sekaligus.
-              transition={{ duration: 0.3, delay: skillIndex * 0.03 }}
-              className="glass-card px-5 py-3 flex items-center gap-3 hover:border-cyan-400/40 hover:scale-105 transition-all"
-              title={skill.category ?? undefined}
-            >
-              <SkillIcon size={16} className="text-cyan-300" />
-              <span className="text-sm text-white/80">{skill.name}</span>
-            </motion.div>
-          )
-        })}
-      </div>
+  return (
+    <section id="skills" className="py-32 scroll-mt-20">
+      <Reveal className="px-6 max-w-5xl mx-auto">
+        <h2 className="text-3xl font-bold mb-16 text-center">
+          {translations.skills.heading}{' '}
+          <span className="text-gradient">
+            {translations.skills.headingAccent}
+          </span>
+        </h2>
+      </Reveal>
+
+      <Reveal delay={0.1} className="space-y-4">
+        <MarqueeRow skills={firstRowSkills} isReversed={false} />
+        {secondRowSkills.length > 0 && (
+          <MarqueeRow skills={secondRowSkills} isReversed />
+        )}
+      </Reveal>
     </section>
   )
 }

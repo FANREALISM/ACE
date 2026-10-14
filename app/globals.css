@@ -269,3 +269,184 @@ h1, h2, h3, h4 {
     }
   }
 }
+
+
+/* ============================================================
+   AMBIENT BACKGROUND — animasi latar halaman publik.
+   Sengaja hanya memakai transform + opacity (dikomposit GPU, tidak
+   memicu layout/paint ulang) dan radial-gradient polos alih-alih
+   filter: blur() besar yang mahal di mobile. Warna ikut tema lewat
+   --gradient-* (cyan/ungu/hijau di dark, merah di light).
+   prefers-reduced-motion sudah ditangani aturan global di atas.
+   ============================================================ */
+.ambient-orb {
+  position: absolute;
+  border-radius: 9999px;
+  will-change: transform;
+  animation: ambient-drift 26s ease-in-out infinite alternate;
+}
+
+[data-theme='light'] .ambient-orb {
+  opacity: 0.55;
+}
+
+.ambient-grid {
+  position: absolute;
+  inset: -48px;
+  color: var(--gradient-from);
+  opacity: 0.07;
+  background-image:
+    linear-gradient(to right, currentColor 1px, transparent 1px),
+    linear-gradient(to bottom, currentColor 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 25%, transparent 75%);
+  mask-image: radial-gradient(ellipse at center, #000 25%, transparent 75%);
+  will-change: transform;
+  animation: ambient-grid-pan 14s linear infinite;
+}
+
+.ambient-particle {
+  position: absolute;
+  bottom: -12px;
+  border-radius: 9999px;
+  background: var(--gradient-from);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: ambient-rise linear infinite;
+}
+
+@keyframes ambient-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(var(--drift-x, 10vw), var(--drift-y, 8vh), 0)
+      scale(1.18);
+  }
+}
+
+@keyframes ambient-grid-pan {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(48px, 48px, 0);
+  }
+}
+
+@keyframes ambient-rise {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), -105vh, 0);
+    opacity: 0;
+  }
+}
+
+
+/* ============================================================
+   MOTION KIT — animasi & transisi yang bisa dipakai ulang.
+   ============================================================ */
+
+/* Fade-in antar-halaman (dipakai app/template.tsx). Hanya opacity: tidak
+   membuat containing block untuk elemen position:fixed di dalamnya. */
+.page-enter {
+  /* backwards (bukan both): setelah selesai, animasi dilepas dan elemen
+     kembali ke state normal. Dengan fill-mode forwards/both, wrapper
+     bisa tetap diperlakukan browser sebagai stacking context/backdrop
+     root permanen akibat animasi opacity yang "masih berlaku". */
+  animation: page-enter 0.5s ease-out backwards;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Angkat sedikit saat hover. Pakai properti `translate` (bukan
+   `transform`) supaya tidak bentrok dengan transform inline milik
+   Framer Motion di elemen yang sama. */
+.hover-lift {
+  transition:
+    translate 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+
+@media (hover: hover) {
+  .hover-lift:hover {
+    translate: 0 -3px;
+    box-shadow: 0 12px 32px -14px var(--accent-glow-hover);
+  }
+}
+
+/* Marquee Skills — lihat components/sections/SkillsSection.tsx. */
+.marquee-row {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll var(--marquee-duration, 40s) linear infinite;
+  will-change: transform;
+}
+
+.marquee-reverse {
+  animation-direction: reverse;
+}
+
+.marquee-group {
+  display: flex;
+  gap: 1rem;
+  /* padding-right = gap, supaya jarak antara akhir salinan pertama dan
+     awal salinan kedua sama dengan jarak antar-chip — loop mulus. */
+  padding-right: 1rem;
+  flex-shrink: 0;
+}
+
+.marquee-row:hover .marquee-track,
+.marquee-row:focus-within .marquee-track,
+.marquee-row:active .marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* Reduced motion: marquee berhenti total; baris jadi daftar yang bisa
+   digeser manual (swipe/scroll), salinan duplikat disembunyikan. */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-row {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .marquee-track {
+    animation: none;
+  }
+  .marquee-group[aria-hidden='true'] {
+    display: none;
+  }
+}

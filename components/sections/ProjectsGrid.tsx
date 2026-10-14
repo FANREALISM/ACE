@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Project } from '@/lib/types'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
+import Reveal from '@/components/ui/Reveal'
 import { useHoverCapable } from '@/lib/useHoverCapable'
 
 /**
@@ -196,12 +197,14 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
 
   return (
     <section id="projects" className="py-32 px-6 max-w-6xl mx-auto scroll-mt-20">
-      <h2 className="text-3xl font-bold mb-8 text-center">
-        {translations.projects.heading}{' '}
-        <span className="text-gradient">
-          {translations.projects.headingAccent}
-        </span>
-      </h2>
+      <Reveal>
+        <h2 className="text-3xl font-bold mb-8 text-center">
+          {translations.projects.heading}{' '}
+          <span className="text-gradient">
+            {translations.projects.headingAccent}
+          </span>
+        </h2>
+      </Reveal>
 
       {allTechTags.length > 1 && (
         <div className="flex flex-wrap justify-center gap-2.5 mb-14">

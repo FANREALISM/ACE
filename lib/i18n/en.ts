@@ -10,6 +10,7 @@ const en: Dictionary = {
     achievements: 'ACHIEVEMENTS',
     systemAdmin: 'SYSTEM_ADMIN',
     techStack: 'TECH_STACK',
+    timeline: 'TIMELINE',
   },
   hero: {
     roleFallback: 'SOFTWARE ENGINEER',
@@ -17,6 +18,14 @@ const en: Dictionary = {
     availableBadge: 'Available for work',
     unavailableBadge: 'Not taking new projects',
     downloadCv: 'Download CV',
+  },
+  timeline: {
+    label: 'TIMELINE_LOG',
+    heading: 'Career &',
+    headingAccent: 'Education',
+    career: 'Career',
+    education: 'Education',
+    present: 'Present',
   },
   skills: {
     heading: 'Tech',

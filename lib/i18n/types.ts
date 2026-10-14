@@ -11,6 +11,7 @@ export interface Dictionary {
     achievements: string
     systemAdmin: string
     techStack: string
+    timeline: string
   }
   hero: {
     roleFallback: string
@@ -18,6 +19,14 @@ export interface Dictionary {
     availableBadge: string
     unavailableBadge: string
     downloadCv: string
+  }
+  timeline: {
+    label: string
+    heading: string
+    headingAccent: string
+    career: string
+    education: string
+    present: string
   }
   skills: {
     heading: string

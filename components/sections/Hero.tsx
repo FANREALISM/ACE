@@ -103,8 +103,23 @@ export default function Hero({ profile }: { profile: Profile | null }) {
     target: heroSectionRef,
     offset: ['start start', 'end start'],
   })
-  const heroOpacity = useTransform(heroScrollProgress, [0, 1], [1, 0])
-  const heroTranslateY = useTransform(heroScrollProgress, [0, 1], [0, -40])
+  // Hero TAHAN dulu (opacity 1, tanpa geser) sampai setengah tinggi
+  // section ter-scroll, baru memudar dan benar-benar hilang di 95%.
+  // Sebelumnya fade linear [0 → 1] mulai dari piksel scroll pertama —
+  // di mobile, di mana hero bertumpuk vertikal dan lebih tinggi dari
+  // layar, konten sudah setengah pudar padahal baru mulai di-scroll,
+  // jadi terasa buru-buru hilang. Berlaku di semua ukuran layar karena
+  // progress-nya relatif ke tinggi hero sendiri.
+  const heroOpacity = useTransform(
+    heroScrollProgress,
+    [0, 0.5, 0.95],
+    [1, 1, 0]
+  )
+  const heroTranslateY = useTransform(
+    heroScrollProgress,
+    [0, 0.5, 1],
+    [0, 0, -40]
+  )
   // Parallax lembut di glow circle dekoratif — REUSE heroScrollProgress
   // yang sudah ada (bukan listener scroll baru), cuma nambah dua
   // useTransform lagi dari motion value yang sama. Dua circle bergerak
@@ -118,12 +133,16 @@ export default function Hero({ profile }: { profile: Profile | null }) {
   return (
     <section
       ref={heroSectionRef}
-      className="relative min-h-screen w-full bg-black flex items-center py-28 md:py-24"
+      className="relative min-h-screen w-full flex items-center py-28 md:py-24"
     >
       {/* Semua layer dekoratif dibungkus overflow-hidden-nya sendiri —
           supaya blur circle yang sengaja "meluber" (translate-x-32) tidak
           memicu horizontal scroll, TANPA ikut memotong konten asli kalau
           section ini jadi lebih tinggi dari viewport di layar pendek. */}
+      {/* bg-black dihapus dari <section> ini: latar solid itu menutupi
+          AmbientBackground (fixed, di belakang seluruh halaman) sehingga
+          animasinya tidak terlihat di Hero. Warna dasar tetap hitam dari
+          <body>, jadi tampilan statis tidak berubah. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* Grid lines background */}
         <div

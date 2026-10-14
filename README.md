@@ -60,6 +60,7 @@ jalankan `schema.sql` dulu, baru sisanya sesuai urutan file di bawah.
 - [ ] `supabase/add_certificate_expiry_credential_id.sql` — expiry_date + credential_id di certificates
 - [ ] `supabase/add_case_study_fields.sql` — 4 kolom opsional case study di projects
 - [ ] `supabase/add_contact_messages.sql` — tabel contact_messages (form kontak publik)
+- [ ] `supabase/add_timeline_entries.sql` — tabel timeline_entries (Timeline Karir & Pendidikan)
 
 ## Fitur yang sudah dibangun tapi tidak pernah tersambung (baru diperbaiki)
 

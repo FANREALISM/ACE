@@ -6,20 +6,23 @@ import type {
   AboutSection,
   Certificate,
   Skill,
+  TimelineEntry,
 } from '@/lib/types'
 import MorphingNavbar from '@/components/sections/MorphingNavbar'
 import Hero from '@/components/sections/Hero'
 import About from '@/components/sections/About'
+import Timeline from '@/components/sections/Timeline'
 import SkillsSection from '@/components/sections/SkillsSection'
 import ProjectsGrid from '@/components/sections/ProjectsGrid'
 import CertificatesSection from '@/components/sections/CertificatesSection'
 import Contact from '@/components/sections/Contact'
 import Footer, { type ActivityItem } from '@/components/sections/Footer'
+import AmbientBackground from '@/components/ui/AmbientBackground'
 import ScrollProgress from '@/components/ui/ScrollProgress'
 
 /** Ambil semua data yang dibutuhkan halaman utama dalam satu batch
  *  paralel (Promise.all) — lebih cepat daripada fetch berurutan satu-
- *  satu, karena kelima query jalan bersamaan, bukan menunggu giliran. */
+ *  satu, karena keenam query jalan bersamaan, bukan menunggu giliran. */
 async function getData() {
   const supabase = await createClient()
 
@@ -29,12 +32,20 @@ async function getData() {
     { data: aboutSections },
     { data: certificates },
     { data: skills },
+    { data: timelineEntries },
   ] = await Promise.all([
     supabase.from('profile').select('*').maybeSingle(),
     supabase.from('projects').select('*').order('display_order'),
     supabase.from('about_sections').select('*').order('display_order'),
     supabase.from('certificates').select('*').order('display_order'),
     supabase.from('skills').select('*').order('display_order'),
+    // Terbaru dulu; created_at sebagai tie-breaker supaya urutan entri
+    // dengan start_date sama tetap deterministik.
+    supabase
+      .from('timeline_entries')
+      .select('*')
+      .order('start_date', { ascending: false })
+      .order('created_at', { ascending: false }),
   ])
 
   return {
@@ -43,6 +54,7 @@ async function getData() {
     aboutSections: (aboutSections as AboutSection[]) ?? [],
     certificates: (certificates as Certificate[]) ?? [],
     skills: (skills as Skill[]) ?? [],
+    timelineEntries: (timelineEntries as TimelineEntry[]) ?? [],
   }
 }
 
@@ -82,8 +94,14 @@ export async function generateMetadata(): Promise<Metadata> {
  *  berurutan, plus JSON-LD structured data untuk SEO dan strip aktivitas
  *  terbaru di Footer. */
 export default async function Home() {
-  const { profile, projects, aboutSections, certificates, skills } =
-    await getData()
+  const {
+    profile,
+    projects,
+    aboutSections,
+    certificates,
+    skills,
+    timelineEntries,
+  } = await getData()
 
   // "Recently added" pakai created_at yang sudah ada — bukan "terakhir
   // diupdate" (tidak ada kolom updated_at, dan mengklaim itu tanpa
@@ -119,6 +137,7 @@ export default async function Home() {
 
   return (
     <>
+      <AmbientBackground />
       <ScrollProgress />
       <script
         type="application/ld+json"
@@ -130,6 +149,7 @@ export default async function Home() {
       <main id="main-content">
         <Hero profile={profile} />
         <About sections={aboutSections} />
+        <Timeline entries={timelineEntries} />
         <SkillsSection skills={skills} />
         <ProjectsGrid projects={projects} />
         <CertificatesSection certificates={certificates} />

@@ -14,6 +14,7 @@ import type { Profile } from '@/lib/types'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import ContactForm from './ContactForm'
 import MagneticButton from '@/components/ui/MagneticButton'
+import Reveal from '@/components/ui/Reveal'
 
 /**
  * Section kontak — link ikon (WhatsApp/GitHub/LinkedIn/Email) sebagai
@@ -52,13 +53,15 @@ export default function Contact({ profile }: { profile: Profile | null }) {
 
   return (
     <section id="contact" className="py-32 px-6 text-center scroll-mt-20">
-      <h2 className="text-3xl font-bold mb-12">
-        {translations.contact.heading}{' '}
-        <span className="text-gradient">
-          {translations.contact.headingAccent}
-        </span>
-      </h2>
-      <div className="flex justify-center gap-8">
+      <Reveal>
+        <h2 className="text-3xl font-bold mb-12">
+          {translations.contact.heading}{' '}
+          <span className="text-gradient">
+            {translations.contact.headingAccent}
+          </span>
+        </h2>
+      </Reveal>
+      <Reveal delay={0.1} className="flex justify-center gap-8">
         {whatsappLink && (
           <MagneticButton strength={8}>
             <a
@@ -132,7 +135,7 @@ export default function Contact({ profile }: { profile: Profile | null }) {
             </button>
           </div>
         )}
-      </div>
+      </Reveal>
 
       {/* Elemen tersembunyi secara visual, cuma untuk diumumkan screen
           reader saat status copy berubah — tombol copy di atas sudah

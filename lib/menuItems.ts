@@ -25,6 +25,7 @@ export interface MenuItem {
  */
 export const menuItems: MenuItem[] = [
   { key: 'startJourney', href: '#about', isAnchor: true },
+  { key: 'timeline', href: '#timeline', isAnchor: true },
   { key: 'techStack', href: '#skills', isAnchor: true },
   { key: 'loadProjects', href: '#projects', isAnchor: true },
   { key: 'achievements', href: '#certificates', isAnchor: true },

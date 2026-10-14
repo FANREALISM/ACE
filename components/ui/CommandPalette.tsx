@@ -8,6 +8,7 @@ import {
   User,
   Cpu,
   Layers,
+  Milestone,
   Award,
   Mail,
   ShieldCheck,
@@ -117,6 +118,13 @@ export default function CommandPalette() {
         hint: 'Section',
         icon: User,
         run: () => scrollToSection('about'),
+      },
+      {
+        id: 'timeline',
+        label: translations.nav.timeline,
+        hint: 'Section',
+        icon: Milestone,
+        run: () => scrollToSection('timeline'),
       },
       {
         id: 'skills',

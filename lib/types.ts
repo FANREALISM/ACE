@@ -80,3 +80,22 @@ export interface Skill {
   display_order: number
   created_at: string
 }
+export type TimelineEntryType = 'career' | 'education'
+
+export interface TimelineEntry {
+  id: string
+  type: TimelineEntryType
+  /** Posisi (career) atau gelar/jurusan (education). */
+  title: string
+  /** Nama perusahaan (career) atau sekolah/kampus (education). */
+  organization: string
+  /** Format ISO date "YYYY-MM-DD" (kolom Postgres `date`). */
+  start_date: string
+  /** null = belum/tidak ada tanggal selesai. Selalu null kalau is_current. */
+  end_date: string | null
+  is_current: boolean
+  description: string | null
+  /** Nama ikon lucide-react, mis. "Briefcase". */
+  icon: string
+  created_at: string
+}

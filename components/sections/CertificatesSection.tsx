@@ -8,6 +8,7 @@ import type { Certificate } from '@/lib/types'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import { useHoverCapable } from '@/lib/useHoverCapable'
 import Modal from '@/components/ui/Modal'
+import Reveal from '@/components/ui/Reveal'
 
 /**
  * Grid sertifikat dengan hover-preview bubble (pola sama persis dengan
@@ -157,12 +158,14 @@ export default function CertificatesSection({
       id="certificates"
       className="py-32 px-6 max-w-6xl mx-auto scroll-mt-20"
     >
-      <h2 className="text-3xl font-bold mb-16 text-center">
-        {translations.certificates.heading}{' '}
-        <span className="text-gradient">
-          {translations.certificates.headingAccent}
-        </span>
-      </h2>
+      <Reveal>
+        <h2 className="text-3xl font-bold mb-16 text-center">
+          {translations.certificates.heading}{' '}
+          <span className="text-gradient">
+            {translations.certificates.headingAccent}
+          </span>
+        </h2>
+      </Reveal>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {certificates.map((certificate, certificateIndex) => (
           <div key={certificate.id} className="relative">
