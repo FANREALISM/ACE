@@ -29,4 +29,5 @@ export const menuItems: MenuItem[] = [
   { key: 'techStack', href: '#skills', isAnchor: true },
   { key: 'loadProjects', href: '#projects', isAnchor: true },
   { key: 'achievements', href: '#certificates', isAnchor: true },
+  { key: 'contact', href: '#contact', isAnchor: true },
 ]

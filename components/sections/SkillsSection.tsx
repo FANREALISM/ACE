@@ -105,9 +105,9 @@ export default function SkillsSection({ skills }: { skills: Skill[] }) {
     : []
 
   return (
-    <section id="skills" className="py-32 scroll-mt-20">
+    <section id="skills" aria-labelledby="skills-heading" className="section-y scroll-mt-20">
       <Reveal className="px-6 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-bold mb-16 text-center">
+        <h2 id="skills-heading" className="text-2xl sm:text-3xl font-bold section-head-gap text-center">
           {translations.skills.heading}{' '}
           <span className="text-gradient">
             {translations.skills.headingAccent}

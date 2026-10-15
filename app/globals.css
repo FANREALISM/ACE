@@ -24,6 +24,7 @@
      bg-black/40 yang juga dipakai form admin (yang sengaja tetap gelap). */
   --panel-bg: #0a0a12;
   --chrome-fill: rgb(0 0 0 / 0.4);
+
 }
 
 html {
@@ -64,6 +65,7 @@ body {
 
   --panel-bg: #ffffff;
   --chrome-fill: rgb(0 0 0 / 0.06);
+
 }
 
 [data-theme='light'] body {
@@ -272,87 +274,6 @@ h1, h2, h3, h4 {
 
 
 /* ============================================================
-   AMBIENT BACKGROUND — animasi latar halaman publik.
-   Sengaja hanya memakai transform + opacity (dikomposit GPU, tidak
-   memicu layout/paint ulang) dan radial-gradient polos alih-alih
-   filter: blur() besar yang mahal di mobile. Warna ikut tema lewat
-   --gradient-* (cyan/ungu/hijau di dark, merah di light).
-   prefers-reduced-motion sudah ditangani aturan global di atas.
-   ============================================================ */
-.ambient-orb {
-  position: absolute;
-  border-radius: 9999px;
-  will-change: transform;
-  animation: ambient-drift 26s ease-in-out infinite alternate;
-}
-
-[data-theme='light'] .ambient-orb {
-  opacity: 0.55;
-}
-
-.ambient-grid {
-  position: absolute;
-  inset: -48px;
-  color: var(--gradient-from);
-  opacity: 0.07;
-  background-image:
-    linear-gradient(to right, currentColor 1px, transparent 1px),
-    linear-gradient(to bottom, currentColor 1px, transparent 1px);
-  background-size: 48px 48px;
-  -webkit-mask-image: radial-gradient(ellipse at center, #000 25%, transparent 75%);
-  mask-image: radial-gradient(ellipse at center, #000 25%, transparent 75%);
-  will-change: transform;
-  animation: ambient-grid-pan 14s linear infinite;
-}
-
-.ambient-particle {
-  position: absolute;
-  bottom: -12px;
-  border-radius: 9999px;
-  background: var(--gradient-from);
-  opacity: 0;
-  will-change: transform, opacity;
-  animation: ambient-rise linear infinite;
-}
-
-@keyframes ambient-drift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(var(--drift-x, 10vw), var(--drift-y, 8vh), 0)
-      scale(1.18);
-  }
-}
-
-@keyframes ambient-grid-pan {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(48px, 48px, 0);
-  }
-}
-
-@keyframes ambient-rise {
-  0% {
-    transform: translate3d(0, 0, 0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.7;
-  }
-  90% {
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate3d(var(--drift, 0px), -105vh, 0);
-    opacity: 0;
-  }
-}
-
-
-/* ============================================================
    MOTION KIT — animasi & transisi yang bisa dipakai ulang.
    ============================================================ */
 
@@ -449,4 +370,207 @@ h1, h2, h3, h4 {
   .marquee-group[aria-hidden='true'] {
     display: none;
   }
+}
+
+/* ============================================================
+   OVERLAY KETERBACAAN untuk PS2Background (components/ui/PS2Background.tsx).
+   Peredup merata + vignette di tepi, di atas canvas tapi di bawah konten,
+   supaya teks & motif terminal tetap terbaca di atas kubus/orb terang.
+   ============================================================ */
+.ps2-overlay {
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    rgb(0 0 0 / 0.3) 0%,
+    rgb(0 0 0 / 0.5) 65%,
+    rgb(0 0 0 / 0.82) 100%
+  );
+}
+
+[data-theme='light'] .ps2-overlay {
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    rgb(255 255 255 / 0.5) 0%,
+    rgb(255 255 255 / 0.68) 65%,
+    rgb(255 255 255 / 0.88) 100%
+  );
+}
+
+
+/* ============================================================
+   RESPONSIVE SPACING — ukuran menyesuaikan lebar layar (fluid), bukan
+   lompat di satu breakpoint. Sebelumnya semua section memakai py-32
+   (128px atas + 128px bawah = 256px jarak antar-section) di semua layar,
+   terlalu lega di HP.
+     lebar 390px  → ~49px    lebar 768px  → ~81px
+     lebar 1024px → ~103px   lebar >=1280px → 125–128px
+   ============================================================ */
+.section-y {
+  padding-block: clamp(3rem, 1rem + 8.5vw, 8rem);
+}
+
+/* Jarak judul section ke kontennya (menggantikan mb-16 yang kaku). */
+.section-head-gap {
+  margin-bottom: clamp(1.75rem, 0.75rem + 5vw, 4rem);
+}
+
+
+/* ============================================================
+   BACKGROUND SWITCHER — tiga mode latar (lihat components/ui/Background.tsx
+   dan lib/background/useBackground.tsx). Mode aktif = atribut data-bkg di
+   <html> (diisi inline script SEBELUM hydrate, jadi tanpa kedip). Layer
+   yang tidak aktif display:none → tidak ada biaya render/animasi.
+   ============================================================ */
+:root {
+  --bkg-base: #000;
+  --bkg-grid: rgb(255 255 255 / 0.035);
+  --bkg-vignette: rgb(0 0 0 / 0.85);
+  --bkg-c1: rgb(37 99 235 / 0.34);
+  --bkg-c2: rgb(124 58 237 / 0.26);
+  --bkg-c3: rgb(14 165 233 / 0.22);
+  --bkg-c4: rgb(236 72 153 / 0.14);
+}
+
+[data-theme='light'] {
+  --bkg-base: #fff;
+  --bkg-grid: rgb(0 0 0 / 0.045);
+  --bkg-vignette: rgb(255 255 255 / 0.9);
+  --bkg-c1: rgb(248 113 113 / 0.3);
+  --bkg-c2: rgb(251 146 60 / 0.2);
+  --bkg-c3: rgb(244 114 182 / 0.22);
+  --bkg-c4: rgb(252 165 165 / 0.24);
+}
+
+.bkg-root {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bkg-layer {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+html[data-bkg='ps2'] .bkg-ps2-fallback,
+html[data-bkg='ambient'] .bkg-ambient,
+html[data-bkg='normal'] .bkg-normal {
+  display: block;
+}
+
+/* --- ps2: fallback statis (nebula biru) yang tampil selama canvas belum
+   dimuat; canvas di-fade-in di atasnya, jadi tidak ada lompatan. --- */
+.bkg-ps2-fallback {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 55%, rgb(37 99 235 / 0.3), transparent 70%),
+    var(--bkg-base);
+}
+
+[data-theme='light'] .bkg-ps2-fallback {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 55%, rgb(248 113 113 / 0.28), transparent 70%),
+    var(--bkg-base);
+}
+
+/* --- ambient: gradient mesh bergerak lambat. Hanya transform (GPU),
+   radial-gradient polos tanpa filter: blur() yang mahal. --- */
+.bkg-ambient {
+  background-color: var(--bkg-base);
+}
+
+.bkg-ambient::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    transparent 35%,
+    var(--bkg-vignette) 130%
+  );
+}
+
+.bkg-blob {
+  position: absolute;
+  display: block;
+  border-radius: 9999px;
+  will-change: transform;
+  animation: bkg-drift 36s ease-in-out infinite alternate;
+}
+
+.bkg-blob-a {
+  width: 75vmax;
+  height: 75vmax;
+  top: -28vmax;
+  left: -24vmax;
+  background: radial-gradient(circle, var(--bkg-c1), transparent 65%);
+  --bkg-dx: 16vw;
+  --bkg-dy: 12vh;
+}
+
+.bkg-blob-b {
+  width: 65vmax;
+  height: 65vmax;
+  right: -22vmax;
+  bottom: -26vmax;
+  background: radial-gradient(circle, var(--bkg-c2), transparent 65%);
+  animation-duration: 44s;
+  --bkg-dx: -14vw;
+  --bkg-dy: -12vh;
+}
+
+.bkg-blob-c {
+  width: 50vmax;
+  height: 50vmax;
+  top: 30vh;
+  left: 38vw;
+  background: radial-gradient(circle, var(--bkg-c3), transparent 65%);
+  animation-duration: 52s;
+  --bkg-dx: -18vw;
+  --bkg-dy: 9vh;
+}
+
+.bkg-blob-d {
+  width: 40vmax;
+  height: 40vmax;
+  top: -8vh;
+  right: 8vw;
+  background: radial-gradient(circle, var(--bkg-c4), transparent 65%);
+  animation-duration: 60s;
+  --bkg-dx: -10vw;
+  --bkg-dy: 16vh;
+}
+
+@keyframes bkg-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(var(--bkg-dx, 10vw), var(--bkg-dy, 8vh), 0) scale(1.15);
+  }
+}
+
+/* --- normal: statis total. Hitam pekat + grid samar + vignette + noise
+   tipis (SVG data-URI kecil, sekali dekode, tanpa animasi). --- */
+.bkg-normal {
+  background-color: var(--bkg-base);
+  background-image:
+    radial-gradient(ellipse 85% 75% at 50% 40%, transparent 40%, var(--bkg-vignette) 130%),
+    linear-gradient(to right, var(--bkg-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--bkg-grid) 1px, transparent 1px);
+  background-size: auto, 56px 56px, 56px 56px;
+}
+
+.bkg-normal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+[data-theme='light'] .bkg-normal::after {
+  opacity: 0.05;
+  filter: invert(1);
 }

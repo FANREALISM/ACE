@@ -52,16 +52,20 @@ export default function Contact({ profile }: { profile: Profile | null }) {
   )
 
   return (
-    <section id="contact" className="py-32 px-6 text-center scroll-mt-20">
+    <section id="contact" aria-labelledby="contact-heading" className="section-y px-6 text-center scroll-mt-20">
       <Reveal>
-        <h2 className="text-3xl font-bold mb-12">
+        <h2 id="contact-heading" className="text-2xl sm:text-3xl font-bold mb-8 md:mb-12">
           {translations.contact.heading}{' '}
           <span className="text-gradient">
             {translations.contact.headingAccent}
           </span>
         </h2>
       </Reveal>
-      <Reveal delay={0.1} className="flex justify-center gap-8">
+      {/* flex-wrap + gap fluid: 4 ikon (56px) + gap-8 = 320px, lebih lebar
+          dari area konten di layar 320px (terukur: ikon pertama terpotong
+          di x=-4px dan halaman melebar). Ikon dikecilkan di mobile dan
+          boleh turun baris kalau masih tidak muat. */}
+      <Reveal delay={0.1} className="flex flex-wrap justify-center gap-4 sm:gap-8">
         {whatsappLink && (
           <MagneticButton strength={8}>
             <a
@@ -70,7 +74,7 @@ export default function Contact({ profile }: { profile: Profile | null }) {
               rel="noopener noreferrer"
               aria-label="WhatsApp"
               title="WhatsApp"
-              className="glass-card p-4 hover:border-emerald-400/40 transition-colors block"
+              className="glass-card p-3.5 sm:p-4 hover:border-emerald-400/40 transition-colors block"
             >
               <MessageCircle size={24} />
             </a>
@@ -84,7 +88,7 @@ export default function Contact({ profile }: { profile: Profile | null }) {
               rel="noopener noreferrer"
               aria-label="GitHub"
               title="GitHub"
-              className="glass-card p-4 hover:border-cyan-400/40 transition-colors block"
+              className="glass-card p-3.5 sm:p-4 hover:border-cyan-400/40 transition-colors block"
             >
               <Github size={24} />
             </a>
@@ -98,7 +102,7 @@ export default function Contact({ profile }: { profile: Profile | null }) {
               rel="noopener noreferrer"
               aria-label="LinkedIn"
               title="LinkedIn"
-              className="glass-card p-4 hover:border-cyan-400/40 transition-colors block"
+              className="glass-card p-3.5 sm:p-4 hover:border-cyan-400/40 transition-colors block"
             >
               <Linkedin size={24} />
             </a>
@@ -110,7 +114,7 @@ export default function Contact({ profile }: { profile: Profile | null }) {
               href={`mailto:${profile.email}`}
               aria-label="Email"
               title="Email"
-              className="glass-card p-4 hover:border-cyan-400/40 transition-colors block"
+              className="glass-card p-3.5 sm:p-4 hover:border-cyan-400/40 transition-colors block"
             >
               <Mail size={24} />
             </a>

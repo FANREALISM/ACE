@@ -11,6 +11,7 @@ const en: Dictionary = {
     systemAdmin: 'SYSTEM_ADMIN',
     techStack: 'TECH_STACK',
     timeline: 'TIMELINE',
+    contact: 'CONTACT',
   },
   hero: {
     roleFallback: 'SOFTWARE ENGINEER',

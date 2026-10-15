@@ -156,17 +156,18 @@ export default function CertificatesSection({
   return (
     <section
       id="certificates"
-      className="py-32 px-6 max-w-6xl mx-auto scroll-mt-20"
+      aria-labelledby="certificates-heading"
+      className="section-y px-6 max-w-6xl mx-auto scroll-mt-20"
     >
       <Reveal>
-        <h2 className="text-3xl font-bold mb-16 text-center">
+        <h2 id="certificates-heading" className="text-2xl sm:text-3xl font-bold section-head-gap text-center">
           {translations.certificates.heading}{' '}
           <span className="text-gradient">
             {translations.certificates.headingAccent}
           </span>
         </h2>
       </Reveal>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8">
         {certificates.map((certificate, certificateIndex) => (
           <div key={certificate.id} className="relative">
             {/* Bubble preview — fixed & ngikutin kursor, lebih besar dari
@@ -208,7 +209,7 @@ export default function CertificatesSection({
               )}
             </AnimatePresence>
 
-            <motion.div
+            <motion.article
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -251,7 +252,7 @@ export default function CertificatesSection({
                   {new Date(certificate.issue_date).getFullYear()}
                 </p>
               )}
-            </motion.div>
+            </motion.article>
           </div>
         ))}
       </div>

@@ -9,6 +9,7 @@ import { menuItems, type MenuItem } from '@/lib/menuItems'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import BackgroundSwitcher from '@/components/ui/BackgroundSwitcher'
 import MagneticButton from '@/components/ui/MagneticButton'
 
 interface MenuButtonProps {
@@ -33,7 +34,7 @@ function MenuButton({ item, index, label }: MenuButtonProps) {
       transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className="group relative flex items-center gap-4 py-4 cursor-pointer select-none"
+      className="group relative flex items-center gap-3 md:gap-4 py-2 md:py-4 cursor-pointer select-none"
     >
       <motion.span
         animate={{ opacity: isHovered ? 1 : 0, scale: isHovered ? 1 : 0.6 }}
@@ -46,7 +47,7 @@ function MenuButton({ item, index, label }: MenuButtonProps) {
       <motion.span
         animate={{ x: isHovered ? 12 : 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className={`font-mono font-bold text-2xl md:text-3xl tracking-wider uppercase transition-colors duration-150 ${
+        className={`font-mono font-bold text-[clamp(1.05rem,5.4vw,1.5rem)] md:text-3xl tracking-wider uppercase transition-colors duration-150 ${
           isHovered ? 'text-cyan-400' : 'text-white/80'
         }`}
       >
@@ -133,14 +134,18 @@ export default function Hero({ profile }: { profile: Profile | null }) {
   return (
     <section
       ref={heroSectionRef}
-      className="relative min-h-screen w-full flex items-center py-28 md:py-24"
+      // 100svh (small viewport height) bukan 100vh: di Safari/Chrome mobile,
+      // 100vh dihitung SAAT address bar tersembunyi sehingga section jadi
+      // lebih tinggi dari layar yang terlihat. Padding atas/bawah juga
+      // dipadatkan di mobile (sebelumnya py-28 = 112px di kedua sisi).
+      className="relative min-h-[100svh] w-full flex items-center pt-20 pb-10 md:py-24"
     >
       {/* Semua layer dekoratif dibungkus overflow-hidden-nya sendiri —
           supaya blur circle yang sengaja "meluber" (translate-x-32) tidak
           memicu horizontal scroll, TANPA ikut memotong konten asli kalau
           section ini jadi lebih tinggi dari viewport di layar pendek. */}
       {/* bg-black dihapus dari <section> ini: latar solid itu menutupi
-          AmbientBackground (fixed, di belakang seluruh halaman) sehingga
+          PS2Background (fixed, di belakang seluruh halaman) sehingga
           animasinya tidak terlihat di Hero. Warna dasar tetap hitam dari
           <body>, jadi tampilan statis tidak berubah. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -164,7 +169,7 @@ export default function Hero({ profile }: { profile: Profile | null }) {
         <div className="absolute inset-0 flex items-center justify-center">
           <motion.div
             style={{ y: glowCircleOneTranslateY }}
-            className="w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[60px]"
+            className="w-[380px] h-[380px] md:w-[600px] md:h-[600px] rounded-full bg-cyan-500/10 blur-[60px]"
           />
           <motion.div
             // x: 128px di sini menggantikan class Tailwind translate-x-32
@@ -174,21 +179,21 @@ export default function Hero({ profile }: { profile: Profile | null }) {
             // dari class Tailwind kalau dibiarkan campur. Disatukan di
             // sini supaya x dan y sama-sama dikelola satu mekanisme.
             style={{ x: 128, y: glowCircleTwoTranslateY }}
-            className="absolute w-[500px] h-[500px] rounded-full bg-purple-500/10 blur-[50px]"
+            className="absolute w-[320px] h-[320px] md:w-[500px] md:h-[500px] rounded-full bg-purple-500/10 blur-[50px]"
           />
         </div>
       </div>
 
       <motion.div
         style={{ opacity: heroOpacity, y: heroTranslateY }}
-        className="relative z-10 w-full max-w-6xl mx-auto px-6 md:px-12 grid md:grid-cols-2 gap-16 items-center"
+        className="relative z-10 w-full max-w-6xl mx-auto px-6 md:px-12 grid md:grid-cols-2 gap-8 md:gap-16 items-center"
       >
         {/* Kolom kiri: foto profil + nama + role + CV */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col items-start gap-8"
+          className="flex flex-col items-start gap-5 md:gap-8"
         >
           {profile && (
             <div
@@ -248,7 +253,10 @@ export default function Hero({ profile }: { profile: Profile | null }) {
               return (
                 <h1
                   aria-label={displayName}
-                  className="font-mono font-bold uppercase text-4xl md:text-6xl tracking-tight text-white mb-3"
+                  // Fluid di mobile: 8.4vw dikunci antara 1.6rem–2.25rem supaya nama
+                  // panjang (13+ karakter monospace) tidak meluber di layar 320px,
+                  // tapi tetap sebesar text-4xl di layar lebar.
+                  className="font-mono font-bold uppercase text-[clamp(1.6rem,8.4vw,2.25rem)] md:text-6xl tracking-tight text-white mb-3"
                 >
                   {/* Animasi stagger per-karakter — sekali jalan saat
                       mount, tidak ada biaya berkelanjutan setelahnya
@@ -308,9 +316,10 @@ export default function Hero({ profile }: { profile: Profile | null }) {
               label={translations.nav[menuItem.key]}
             />
           ))}
-          <div className="pt-2 border-t border-white/10 mt-2 flex items-center gap-4">
+          <div className="pt-2 border-t border-white/10 mt-2 flex flex-wrap items-center gap-x-4 gap-y-3">
             <LanguageSwitcher />
             <ThemeToggle />
+            <BackgroundSwitcher placement="up" align="left" />
           </div>
         </nav>
       </motion.div>

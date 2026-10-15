@@ -12,6 +12,7 @@ export interface Dictionary {
     systemAdmin: string
     techStack: string
     timeline: string
+    contact: string
   }
   hero: {
     roleFallback: string

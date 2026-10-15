@@ -9,6 +9,7 @@ import { Menu } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import BackgroundSwitcher from '@/components/ui/BackgroundSwitcher'
 
 /**
  * Navbar yang "muncul" (fade-in dari atas) setelah pengunjung scroll
@@ -87,10 +88,13 @@ export default function MorphingNavbar({
         </div>
 
         <nav className="flex items-center gap-5 font-mono text-xs uppercase tracking-wider">
-          {/* Link penuh cuma di desktop — di layar sempit, 5 link + pill
+          {/* Link penuh cuma di layar >= 1024px (lg) — dengan 6 link + pill
+              bahasa + tema + ⌘K, lebar total ~800px: di tablet 768px sudah
+              meluber keluar layar (terukur 819px). Di bawah lg, satu tombol
+              menu membuka command palette. Di layar sempit, 5 link + pill
               bahasa + badge ⌘K dijamin overflow horizontal kalau tetap
               dipaksa satu baris tanpa wrap atau menu mobile. */}
-          <div className="hidden md:flex items-center gap-5">
+          <div className="hidden lg:flex items-center gap-5">
             {menuItems.map((menuItem) =>
               menuItem.isAnchor ? (
                 <a
@@ -124,6 +128,7 @@ export default function MorphingNavbar({
             )}
             <LanguageSwitcher variant="compact" />
             <ThemeToggle variant="compact" />
+            <BackgroundSwitcher variant="compact" placement="down" align="right" />
             <button
               onClick={openCommandPalette}
               aria-label="Buka command palette"
@@ -141,7 +146,7 @@ export default function MorphingNavbar({
           <button
             onClick={openCommandPalette}
             aria-label="Buka menu navigasi"
-            className="md:hidden flex items-center justify-center min-w-11 min-h-11 rounded-lg border border-white/15 text-white/70 hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
+            className="lg:hidden flex items-center justify-center min-w-11 min-h-11 rounded-lg border border-white/15 text-white/70 hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
           >
             <Menu size={16} />
           </button>

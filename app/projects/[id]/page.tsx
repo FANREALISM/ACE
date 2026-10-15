@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { SITE_URL } from '@/lib/seo'
 import type { Metadata } from 'next'
 import { ArrowLeft, ExternalLink, Github } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
@@ -29,8 +30,7 @@ export async function generateMetadata({
   if (!project) return { title: 'Project Not Found' }
 
   const pageTitle = `${project.title} — Case Study`
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://your-domain.vercel.app'
+  const siteUrl = SITE_URL
   const canonicalUrl = `${siteUrl}/projects/${projectId}`
 
   // Sebelumnya halaman ini cuma punya title+description — kalau di-share
@@ -124,8 +124,7 @@ export default async function ProjectCaseStudyPage({
   // JSON-LD CreativeWork — membantu Google memahami ini sebagai konten
   // portofolio/karya, bukan cuma halaman teks generik. Tidak render apa
   // pun secara visual.
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://your-domain.vercel.app'
+  const siteUrl = SITE_URL
   const creativeWorkStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'CreativeWork',
@@ -137,7 +136,7 @@ export default async function ProjectCaseStudyPage({
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen text-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

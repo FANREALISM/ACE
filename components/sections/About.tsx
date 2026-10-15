@@ -26,18 +26,18 @@ export default function About({ sections }: { sections: AboutSection[] }) {
   const { translations, locale } = useLanguage()
 
   return (
-    <section id="about" className="py-32 px-6 max-w-5xl mx-auto scroll-mt-20">
+    <section id="about" aria-labelledby="about-heading" className="section-y px-6 max-w-5xl mx-auto scroll-mt-20">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="mb-16"
+        className="section-head-gap"
       >
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-cyan-400/60 mb-3">
           {translations.about.label}
         </p>
-        <h2 className="text-4xl font-bold">
+        <h2 id="about-heading" className="text-3xl sm:text-4xl font-bold">
           {translations.about.heading}{' '}
           <span className="text-gradient">
             {translations.about.headingAccent}
@@ -48,7 +48,7 @@ export default function About({ sections }: { sections: AboutSection[] }) {
       {sections.length === 0 ? (
         <p className="text-white/40">{translations.about.empty}</p>
       ) : (
-        <div className="space-y-20">
+        <div className="space-y-12 md:space-y-20">
           {sections.map((section, sectionIndex) => {
             const SectionIcon = resolveIcon(section.icon)
             // Selang-seling posisi gambar kiri/kanan tiap paragraf ganjil
@@ -68,7 +68,7 @@ export default function About({ sections }: { sections: AboutSection[] }) {
                       ? 'md:flex-row-reverse'
                       : 'md:flex-row'
                     : ''
-                } gap-8 items-center`}
+                } gap-6 md:gap-8 items-center`}
               >
                 {section.image_url && (
                   <div className="w-full md:w-2/5 shrink-0">
@@ -101,7 +101,7 @@ export default function About({ sections }: { sections: AboutSection[] }) {
                   <p className="font-mono text-xs uppercase tracking-widest text-white/40 mb-2">
                     {section.title}
                   </p>
-                  <p className="text-white/70 text-lg leading-relaxed">
+                  <p className="text-white/70 text-base sm:text-lg leading-relaxed">
                     {/* Konten Inggris cuma dipakai kalau memang diisi
                         (translate-on-write via tombol admin) — kalau
                         kosong, fallback ke Bahasa Indonesia daripada

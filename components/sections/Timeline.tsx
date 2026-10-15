@@ -75,19 +75,20 @@ export default function Timeline({ entries }: { entries: TimelineEntry[] }) {
   return (
     <section
       id="timeline"
-      className="py-32 px-6 max-w-5xl mx-auto scroll-mt-20"
+      aria-labelledby="timeline-heading"
+      className="section-y px-6 max-w-5xl mx-auto scroll-mt-20"
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="mb-16"
+        className="section-head-gap"
       >
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-cyan-400/60 mb-3">
           [ {translations.timeline.label} ]
         </p>
-        <h2 className="text-4xl font-bold">
+        <h2 id="timeline-heading" className="text-3xl sm:text-4xl font-bold">
           {translations.timeline.heading}{' '}
           <span className="text-gradient">
             {translations.timeline.headingAccent}
@@ -147,7 +148,7 @@ export default function Timeline({ entries }: { entries: TimelineEntry[] }) {
           return (
             <li
               key={entry.id}
-              className="relative pl-14 md:pl-0 md:grid md:grid-cols-2 md:gap-x-16 pb-12 last:pb-0"
+              className="relative pl-14 md:pl-0 md:grid md:grid-cols-2 md:gap-x-16 pb-8 md:pb-12 last:pb-0"
             >
               {/* Node. bg-black (dipetakan ke putih di light theme) sebagai
                   alas solid supaya garis tidak tembus lewat latar node

@@ -4,6 +4,9 @@ import { Analytics } from '@vercel/analytics/next'
 import { LanguageProvider } from '@/lib/i18n/LanguageProvider'
 import { ThemeProvider } from '@/lib/theme/ThemeProvider'
 import CommandPalette from '@/components/ui/CommandPalette'
+import Background from '@/components/ui/Background'
+import { BackgroundProvider } from '@/lib/background/useBackground'
+import { SEO_DEFAULTS, SITE_URL } from '@/lib/seo'
 import './globals.css'
 
 const interFont = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -16,16 +19,61 @@ const jetbrainsMonoFont = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 })
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://your-domain.vercel.app'
-
+/**
+ * Metadata DEFAULT seluruh situs. Halaman individual (app/page.tsx,
+ * projects/[id]) menimpa title/description/openGraph/twitter lewat
+ * buildPageMetadata() di lib/seo.ts. File convention app/opengraph-
+ * image.tsx otomatis menyediakan og:image & twitter:image.
+ */
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Portfolio',
-    template: '%s | Portfolio',
+    default: SEO_DEFAULTS.defaultTitle,
+    template: `%s | ${SEO_DEFAULTS.siteName}`,
   },
-  description: 'Personal portfolio website.',
+  description: SEO_DEFAULTS.description,
+  keywords: [...SEO_DEFAULTS.keywords],
+  applicationName: SEO_DEFAULTS.siteName,
+  authors: [{ name: SEO_DEFAULTS.siteName, url: SITE_URL }],
+  creator: SEO_DEFAULTS.siteName,
+  publisher: SEO_DEFAULTS.siteName,
+  category: 'technology',
+  alternates: { canonical: SITE_URL },
+  openGraph: {
+    type: 'website',
+    url: SITE_URL,
+    siteName: SEO_DEFAULTS.siteName,
+    title: SEO_DEFAULTS.defaultTitle,
+    description: SEO_DEFAULTS.description,
+    locale: 'id_ID',
+    alternateLocale: ['en_US'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SEO_DEFAULTS.defaultTitle,
+    description: SEO_DEFAULTS.description,
+    site: SEO_DEFAULTS.twitterHandle
+      ? `@${SEO_DEFAULTS.twitterHandle}`
+      : undefined,
+    creator: SEO_DEFAULTS.twitterHandle
+      ? `@${SEO_DEFAULTS.twitterHandle}`
+      : undefined,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
+  formatDetection: { telephone: false, email: false, address: false },
+  verification: SEO_DEFAULTS.googleVerification
+    ? { google: SEO_DEFAULTS.googleVerification }
+    : undefined,
 }
 
 export const viewport: Viewport = {
@@ -71,6 +119,23 @@ export default function RootLayout({
                   : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
                 document.documentElement.setAttribute('data-theme', resolvedTheme);
               } catch (themeDetectionError) {}
+
+              /* Pilihan latar: localStorage → fallback. Default 'ps2'
+                 (sama dengan DEFAULT_BACKGROUND_MODE di lib/background/
+                 useBackground.tsx), kecuali browser meminta hemat data
+                 (Save-Data) — pengunjung seperti itu mulai dari 'normal'
+                 supaya tidak diseret animasi berat. Diset ke <html> SEBELUM
+                 hydrate agar CSS menampilkan latar yang benar tanpa kedip. */
+              var resolvedBackground = 'ps2';
+              try {
+                var savedBackground = localStorage.getItem('portfolio-bkg');
+                if (savedBackground === 'ps2' || savedBackground === 'ambient' || savedBackground === 'normal') {
+                  resolvedBackground = savedBackground;
+                } else if (navigator.connection && navigator.connection.saveData) {
+                  resolvedBackground = 'normal';
+                }
+              } catch (backgroundDetectionError) {}
+              document.documentElement.setAttribute('data-bkg', resolvedBackground);
             `,
           }}
         />
@@ -79,8 +144,15 @@ export default function RootLayout({
         </a>
         <ThemeProvider>
           <LanguageProvider>
-            {children}
-            <CommandPalette />
+            <BackgroundProvider>
+              {/* Latar global (z-index -1). Di dalam ThemeProvider karena
+                  PS2 membaca tema aktif; di dalam BackgroundProvider karena
+                  membaca pilihan pengunjung. Chunk animasi PS2 di-lazy-load
+                  (lihat components/ui/Background.tsx). */}
+              <Background />
+              {children}
+              <CommandPalette />
+            </BackgroundProvider>
           </LanguageProvider>
         </ThemeProvider>
         <Analytics />

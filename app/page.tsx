@@ -17,8 +17,13 @@ import ProjectsGrid from '@/components/sections/ProjectsGrid'
 import CertificatesSection from '@/components/sections/CertificatesSection'
 import Contact from '@/components/sections/Contact'
 import Footer, { type ActivityItem } from '@/components/sections/Footer'
-import AmbientBackground from '@/components/ui/AmbientBackground'
 import ScrollProgress from '@/components/ui/ScrollProgress'
+import {
+  SEO_DEFAULTS,
+  SITE_URL,
+  buildPageMetadata,
+  serializeJsonLd,
+} from '@/lib/seo'
 
 /** Ambil semua data yang dibutuhkan halaman utama dalam satu batch
  *  paralel (Promise.all) — lebih cepat daripada fetch berurutan satu-
@@ -65,9 +70,11 @@ async function getData() {
 export async function generateMetadata(): Promise<Metadata> {
   const { profile } = await getData()
 
-  const pageTitle = profile ? `${profile.name} — ${profile.role}` : 'Portfolio'
+  const pageTitle = profile
+    ? `${profile.name} — ${profile.role}`
+    : SEO_DEFAULTS.defaultTitle
   const pageDescription =
-    profile?.short_description ?? 'Personal portfolio website.'
+    profile?.short_description ?? SEO_DEFAULTS.description
 
   // images sengaja TIDAK diisi di sini — app/opengraph-image.tsx (file
   // convention Next.js) generate gambar 1200x630 khusus dari nama+role,
@@ -75,19 +82,14 @@ export async function generateMetadata(): Promise<Metadata> {
   // sini, itu akan override file convention tersebut sepenuhnya (metadata
   // eksplisit menang atas convention), jadi template OG-nya tidak akan
   // pernah kepakai.
-  return {
+  // openGraph di page MENGGANTI (bukan merge) openGraph di layout, jadi
+  // objek lengkap dibangun lewat helper bersama.
+  return buildPageMetadata({
     title: pageTitle,
     description: pageDescription,
-    openGraph: {
-      title: pageTitle,
-      description: pageDescription,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: pageTitle,
-      description: pageDescription,
-    },
-  }
+    path: '/',
+    absoluteTitle: true,
+  })
 }
 
 /** Halaman utama portofolio — merangkai semua section publik secara
@@ -127,22 +129,35 @@ export default async function Home() {
 
   const personStructuredData = {
     '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: profile?.name,
-    jobTitle: profile?.role,
-    description: profile?.short_description,
-    url: process.env.NEXT_PUBLIC_SITE_URL,
-    sameAs: [profile?.github_url, profile?.linkedin_url].filter(Boolean),
+    '@graph': [
+      {
+        '@type': 'Person',
+        '@id': `${SITE_URL}/#person`,
+        name: profile?.name ?? SEO_DEFAULTS.siteName,
+        jobTitle: profile?.role,
+        description: profile?.short_description,
+        url: SITE_URL,
+        image: profile?.avatar_url ?? undefined,
+        sameAs: [profile?.github_url, profile?.linkedin_url].filter(Boolean),
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        url: SITE_URL,
+        name: SEO_DEFAULTS.siteName,
+        inLanguage: ['id-ID', 'en-US'],
+        publisher: { '@id': `${SITE_URL}/#person` },
+      },
+    ],
   }
 
   return (
     <>
-      <AmbientBackground />
       <ScrollProgress />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(personStructuredData),
+          __html: serializeJsonLd(personStructuredData),
         }}
       />
       <MorphingNavbar profile={profile} />

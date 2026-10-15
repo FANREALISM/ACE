@@ -162,7 +162,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
 
   if (projects.length === 0) {
     return (
-      <section id="projects" className="py-24 px-6 text-center scroll-mt-20">
+      <section id="projects" className="section-y px-6 text-center scroll-mt-20">
         <p className="text-white/40">{translations.projects.empty}</p>
       </section>
     )
@@ -196,9 +196,9 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
     : projectsSortedByFeatured
 
   return (
-    <section id="projects" className="py-32 px-6 max-w-6xl mx-auto scroll-mt-20">
+    <section id="projects" aria-labelledby="projects-heading" className="section-y px-6 max-w-6xl mx-auto scroll-mt-20">
       <Reveal>
-        <h2 className="text-3xl font-bold mb-8 text-center">
+        <h2 id="projects-heading" className="text-2xl sm:text-3xl font-bold mb-6 md:mb-8 text-center">
           {translations.projects.heading}{' '}
           <span className="text-gradient">
             {translations.projects.headingAccent}
@@ -207,7 +207,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
       </Reveal>
 
       {allTechTags.length > 1 && (
-        <div className="flex flex-wrap justify-center gap-2.5 mb-14">
+        <div className="flex flex-wrap justify-center gap-2 md:gap-2.5 mb-8 md:mb-14">
           <button
             onClick={() => setActiveTechFilter(null)}
             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
@@ -239,7 +239,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
       {filteredProjects.length === 0 ? (
         <p className="text-white/40 text-center">{translations.projects.empty}</p>
       ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-8">
         {filteredProjects.map((project, projectIndex) => {
           const projectDescription =
             locale === 'en' && project.description_en
@@ -297,7 +297,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                 )}
               </AnimatePresence>
 
-              <motion.div
+              <motion.article
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -416,7 +416,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                     </Link>
                   )}
                 </div>
-              </motion.div>
+              </motion.article>
             </div>
           )
         })}

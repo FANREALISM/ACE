@@ -15,11 +15,14 @@ import {
   Languages,
   Sun,
   Moon,
+  Palette,
   CornerDownLeft,
   type LucideIcon,
 } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import { useTheme } from '@/lib/theme/ThemeProvider'
+import { useBackground } from '@/lib/background/useBackground'
+import { BACKGROUND_LABELS } from '@/components/ui/BackgroundSwitcher'
 
 /** Satu entri command di palette — section untuk lompat ke bagian
  *  halaman, action untuk toggle bahasa/tema, route untuk navigasi. */
@@ -46,6 +49,7 @@ export default function CommandPalette() {
   const router = useRouter()
   const { translations, toggleLocale, locale } = useLanguage()
   const { theme, toggleTheme } = useTheme()
+  const { mode: backgroundMode, cycleMode: cycleBackground } = useBackground()
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -172,6 +176,15 @@ export default function CommandPalette() {
         run: () => toggleTheme(),
       },
       {
+        id: 'background',
+        label: backgroundMode
+          ? `Background: ${BACKGROUND_LABELS[backgroundMode].label} (ganti)`
+          : 'Background: ganti mode',
+        hint: 'Action',
+        icon: Palette,
+        run: () => cycleBackground(),
+      },
+      {
         id: 'admin',
         label: translations.nav.systemAdmin,
         hint: 'Route',
@@ -179,7 +192,16 @@ export default function CommandPalette() {
         run: () => router.push('/secret-cmd'),
       },
     ],
-    [translations, locale, toggleLocale, theme, toggleTheme, router]
+    [
+      translations,
+      locale,
+      toggleLocale,
+      theme,
+      toggleTheme,
+      backgroundMode,
+      cycleBackground,
+      router,
+    ]
   )
 
   // Filter command berdasarkan apa yang diketik user — substring match
