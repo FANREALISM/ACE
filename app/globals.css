@@ -482,80 +482,240 @@ html[data-bkg='normal'] .bkg-normal {
     var(--bkg-base);
 }
 
-/* --- ambient: gradient mesh bergerak lambat. Hanya transform (GPU),
-   radial-gradient polos tanpa filter: blur() yang mahal. --- */
+/* --- ambient: "Cyber-Aurora / Holographic Mesh" — mode performa tinggi.
+   Aturan keras (jangan dilanggar saat mengubah blok ini):
+     • Hanya `transform` (translate/scale/rotate) dan `opacity` yang
+       dianimasikan → dikomposit GPU, nol layout/paint per frame.
+     • TANPA filter: blur(), box-shadow animasi, canvas, JS, atau rAF.
+       Kelembutan blob datang dari radial-gradient yang memudar ke
+       transparan, bukan dari blur.
+     • Lapisan statis (grid, scanline halus, noise, vignette) di-raster
+       sekali. Hanya 6 elemen yang bergerak: 4 blob, grid, garis scan.
+   Keterbacaan: warna blob dibatasi alpha-nya dan vignette menggelapkan
+   tepi + tengah-bawah, jadi teks putih tetap ≥ 4.5:1 di titik terterang. --- */
+:root {
+  --amb-blue: rgb(37 99 235 / 0.29);
+  --amb-cyan: rgb(6 182 212 / 0.18);
+  --amb-violet: rgb(109 40 217 / 0.32);
+  --amb-indigo: rgb(56 70 200 / 0.22);
+  --amb-line: rgb(34 211 238 / 0.2);
+  --amb-line-halo: rgb(34 211 238 / 0.05);
+  --amb-grid: rgb(120 200 255 / 0.05);
+}
+
+[data-theme='light'] {
+  --amb-blue: rgb(248 113 113 / 0.3);
+  --amb-cyan: rgb(251 146 60 / 0.22);
+  --amb-violet: rgb(244 114 182 / 0.24);
+  --amb-indigo: rgb(252 165 165 / 0.26);
+  --amb-line: rgb(185 28 28 / 0.14);
+  --amb-line-halo: rgb(185 28 28 / 0.04);
+  --amb-grid: rgb(0 0 0 / 0.05);
+}
+
 .bkg-ambient {
   background-color: var(--bkg-base);
+  /* Isolasi: perubahan di dalam layer ini tidak memicu layout/paint di luar. */
+  contain: strict;
 }
 
-.bkg-ambient::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse 85% 75% at 50% 45%,
-    transparent 35%,
-    var(--bkg-vignette) 130%
-  );
-}
-
+/* Blob: elips besar (rasio berbeda-beda → terasa organik, bukan lingkaran
+   kaku). Lebar dibatasi min(vmax, px) supaya layer GPU tidak raksasa di
+   monitor lebar. Warna memudar dengan closest-side → tepi sudah transparan
+   sebelum batas elemen (tidak ada tepi keras). */
 .bkg-blob {
   position: absolute;
   display: block;
   border-radius: 9999px;
-  will-change: transform;
-  animation: bkg-drift 36s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+  animation: bkg-float-a 47s ease-in-out infinite;
 }
 
 .bkg-blob-a {
-  width: 75vmax;
-  height: 75vmax;
-  top: -28vmax;
-  left: -24vmax;
-  background: radial-gradient(circle, var(--bkg-c1), transparent 65%);
-  --bkg-dx: 16vw;
-  --bkg-dy: 12vh;
+  width: min(95vmax, 1300px);
+  height: min(70vmax, 960px);
+  top: -30vmax;
+  left: -28vmax;
+  background: radial-gradient(closest-side, var(--amb-blue), transparent);
+  animation-name: bkg-float-a;
+  animation-duration: 47s;
 }
 
 .bkg-blob-b {
-  width: 65vmax;
-  height: 65vmax;
-  right: -22vmax;
-  bottom: -26vmax;
-  background: radial-gradient(circle, var(--bkg-c2), transparent 65%);
-  animation-duration: 44s;
-  --bkg-dx: -14vw;
-  --bkg-dy: -12vh;
+  width: min(80vmax, 1100px);
+  height: min(90vmax, 1250px);
+  right: -30vmax;
+  bottom: -32vmax;
+  background: radial-gradient(closest-side, var(--amb-violet), transparent);
+  animation-name: bkg-float-b;
+  animation-duration: 61s;
+  animation-delay: -18s;
 }
 
 .bkg-blob-c {
-  width: 50vmax;
-  height: 50vmax;
-  top: 30vh;
-  left: 38vw;
-  background: radial-gradient(circle, var(--bkg-c3), transparent 65%);
-  animation-duration: 52s;
-  --bkg-dx: -18vw;
-  --bkg-dy: 9vh;
+  width: min(70vmax, 960px);
+  height: min(55vmax, 760px);
+  top: 28vh;
+  left: 30vw;
+  background: radial-gradient(closest-side, var(--amb-cyan), transparent);
+  animation-name: bkg-float-c;
+  animation-duration: 53s;
+  animation-delay: -31s;
 }
 
 .bkg-blob-d {
-  width: 40vmax;
-  height: 40vmax;
-  top: -8vh;
-  right: 8vw;
-  background: radial-gradient(circle, var(--bkg-c4), transparent 65%);
-  animation-duration: 60s;
-  --bkg-dx: -10vw;
-  --bkg-dy: 16vh;
+  width: min(60vmax, 840px);
+  height: min(75vmax, 1050px);
+  top: -14vh;
+  right: -14vw;
+  background: radial-gradient(closest-side, var(--amb-indigo), transparent);
+  animation-name: bkg-float-d;
+  animation-duration: 71s;
+  animation-delay: -9s;
 }
 
-@keyframes bkg-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
+/* Setiap blob punya lintasan sendiri dengan 4–5 titik singgah (bukan
+   bolak-balik lurus) + sedikit rotasi & napas opacity → gerak organik.
+   Jarak tempuh besar (≈ 40–60% layar) tapi durasi 47–71 detik, jadi
+   terasa melayang, bukan bergerak. */
+@keyframes bkg-float-a {
+  0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 0.85; }
+  25%  { transform: translate3d(28vw, 12vh, 0) scale(1.12) rotate(14deg); opacity: 1; }
+  50%  { transform: translate3d(36vw, 34vh, 0) scale(0.94) rotate(32deg); opacity: 0.8; }
+  75%  { transform: translate3d(12vw, 40vh, 0) scale(1.1) rotate(18deg); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 0.85; }
+}
+
+@keyframes bkg-float-b {
+  0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 0.9; }
+  30%  { transform: translate3d(-30vw, -18vh, 0) scale(1.15) rotate(-20deg); opacity: 1; }
+  60%  { transform: translate3d(-42vw, 8vh, 0) scale(0.92) rotate(-8deg); opacity: 0.75; }
+  85%  { transform: translate3d(-14vw, -30vh, 0) scale(1.08) rotate(-26deg); opacity: 0.95; }
+  100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 0.9; }
+}
+
+@keyframes bkg-float-c {
+  0%   { transform: translate3d(0, 0, 0) scale(0.9) rotate(0deg); opacity: 0.7; }
+  20%  { transform: translate3d(-26vw, -14vh, 0) scale(1.15) rotate(25deg); opacity: 1; }
+  50%  { transform: translate3d(-8vw, 26vh, 0) scale(1.25) rotate(-10deg); opacity: 0.85; }
+  80%  { transform: translate3d(24vw, 10vh, 0) scale(1) rotate(12deg); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0) scale(0.9) rotate(0deg); opacity: 0.7; }
+}
+
+@keyframes bkg-float-d {
+  0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 0.75; }
+  35%  { transform: translate3d(-22vw, 30vh, 0) scale(1.2) rotate(-18deg); opacity: 1; }
+  65%  { transform: translate3d(-34vw, 52vh, 0) scale(0.9) rotate(10deg); opacity: 0.8; }
+  100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 0.75; }
+}
+
+/* Grid tipis (dipertahankan) — satu elemen setinggi layar + 1 sel, digeser
+   ke bawah tepat 1 sel (56px) per siklus linear, lalu mulai lagi: loop
+   mulus tanpa lompatan, memberi kesan "bidang digital" yang merayap. */
+.bkg-amb-grid {
+  position: absolute;
+  top: -56px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(to right, var(--amb-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--amb-grid) 1px, transparent 1px);
+  background-size: 56px 56px;
+  will-change: transform;
+  animation: bkg-grid-creep 28s linear infinite;
+}
+
+@keyframes bkg-grid-creep {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, 56px, 0); }
+}
+
+/* Slow scanline: pita 140px dengan garis inti tipis + halo lembut (semua
+   statis dalam gradient — halo BUKAN box-shadow/blur) yang turun dari atas
+   ke bawah layar. Pita bergerak, isinya tidak berubah → hanya transform. */
+.bkg-amb-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 140px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--amb-line-halo) 40%,
+    var(--amb-line) 50%,
+    var(--amb-line-halo) 60%,
+    transparent 100%
+  );
+  background-size: 100% 100%;
+  will-change: transform;
+  animation: bkg-scan-sweep 16s linear infinite;
+}
+
+/* Garis inti 2px: dibuat dengan mask-less trick — gradient di atas sudah
+   memuncak di 50%; ::after menambah garis tajam 1px tepat di tengah. */
+.bkg-amb-scan::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 70px;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--amb-line) 20%,
+    var(--amb-line) 80%,
+    transparent
+  );
+}
+
+@keyframes bkg-scan-sweep {
+  from { transform: translate3d(0, -160px, 0); }
+  to   { transform: translate3d(0, 100vh, 0); }
+}
+
+/* Vignette + tekstur CRT statis (dirender sekali): garis horizontal
+   halus tiap 3px, noise tipis untuk memecah banding gradient di layar
+   murah, dan gelap di tepi & bawah demi kontras teks. */
+.bkg-ambient::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 80% at 50% 40%, transparent 30%, var(--bkg-vignette) 125%),
+    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.1) 0, rgb(0 0 0 / 0.1) 1px, transparent 1px, transparent 3px);
+}
+
+[data-theme='light'] .bkg-ambient::after {
+  background:
+    radial-gradient(ellipse 90% 80% at 50% 40%, transparent 30%, var(--bkg-vignette) 125%);
+}
+
+.bkg-ambient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+[data-theme='light'] .bkg-ambient::before {
+  opacity: 0.04;
+  filter: invert(1);
+}
+
+/* Pengguna yang meminta gerak minimal: komposisi tetap cantik tapi diam. */
+@media (prefers-reduced-motion: reduce) {
+  .bkg-blob,
+  .bkg-amb-grid,
+  .bkg-amb-scan {
+    animation: none;
   }
-  to {
-    transform: translate3d(var(--bkg-dx, 10vw), var(--bkg-dy, 8vh), 0) scale(1.15);
+  .bkg-amb-scan {
+    display: none;
   }
 }
 

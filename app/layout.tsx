@@ -124,19 +124,33 @@ export default function RootLayout({
                 document.documentElement.setAttribute('data-theme', resolvedTheme);
               } catch (themeDetectionError) {}
 
-              /* Pilihan latar: localStorage → fallback. Default 'ps2'
-                 (sama dengan DEFAULT_BACKGROUND_MODE di lib/background/
-                 useBackground.tsx), kecuali browser meminta hemat data
-                 (Save-Data) — pengunjung seperti itu mulai dari 'normal'
-                 supaya tidak diseret animasi berat. Diset ke <html> SEBELUM
-                 hydrate agar CSS menampilkan latar yang benar tanpa kedip. */
+              /* Pilihan latar. Prioritas: pilihan manual ('portfolio-bkg') →
+                 hasil ukur FPS kunjungan sebelumnya ('portfolio-bkg-auto')
+                 → tebakan statis perangkat → default 'ps2'. Logika tebakan
+                 sama dengan detectInitialMode() di lib/background/
+                 devicePerformance.ts — ubah keduanya bersamaan. Diset ke
+                 <html> SEBELUM hydrate agar tidak ada kedip. */
               var resolvedBackground = 'ps2';
               try {
+                var isMode = function (v) { return v === 'ps2' || v === 'ambient' || v === 'normal'; };
                 var savedBackground = localStorage.getItem('portfolio-bkg');
-                if (savedBackground === 'ps2' || savedBackground === 'ambient' || savedBackground === 'normal') {
+                var autoBackground = localStorage.getItem('portfolio-bkg-auto');
+                if (isMode(savedBackground)) {
                   resolvedBackground = savedBackground;
-                } else if (navigator.connection && navigator.connection.saveData) {
-                  resolvedBackground = 'normal';
+                } else if (isMode(autoBackground)) {
+                  resolvedBackground = autoBackground;
+                } else {
+                  var conn = navigator.connection;
+                  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                  if ((conn && conn.saveData) || reduceMotion) {
+                    resolvedBackground = 'normal';
+                  } else if (
+                    (conn && /^(slow-2g|2g)$/.test(conn.effectiveType || '')) ||
+                    (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 2) ||
+                    (typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 2)
+                  ) {
+                    resolvedBackground = 'ambient';
+                  }
                 }
               } catch (backgroundDetectionError) {}
               document.documentElement.setAttribute('data-bkg', resolvedBackground);

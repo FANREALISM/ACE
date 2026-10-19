@@ -369,14 +369,8 @@ export default function Timeline({ entries }: { entries: TimelineEntry[] }) {
       aria-labelledby="timeline-heading"
       className="section-y px-6 max-w-3xl mx-auto scroll-mt-20"
     >
-      <motion.div
-        ref={headRef}
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="mb-6 md:mb-8 scroll-mt-24"
-      >
+      <Reveal>
+      <div ref={headRef} className="mb-6 md:mb-8 scroll-mt-24">
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-cyan-400/60 mb-3">
           [ {translations.timeline.label} ]
         </p>
@@ -389,7 +383,8 @@ export default function Timeline({ entries }: { entries: TimelineEntry[] }) {
             {translations.timeline.headingAccent}
           </span>
         </h2>
-      </motion.div>
+      </div>
+      </Reveal>
 
       <Reveal delay={0.1}>
         {/* Tab pill. Indikator aktif = pil bergeser (layoutId) + border &

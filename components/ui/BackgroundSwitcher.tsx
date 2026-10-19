@@ -39,7 +39,7 @@ export default function BackgroundSwitcher({
   placement = 'down',
   align = 'left',
 }: BackgroundSwitcherProps) {
-  const { mode, setMode } = useBackground()
+  const { mode, setMode, isAutoReduced } = useBackground()
   const [isOpen, setIsOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -180,7 +180,9 @@ export default function BackgroundSwitcher({
                     {BACKGROUND_LABELS[optionMode].label}
                   </span>
                   <span className="text-[11px] text-white/40 normal-case tracking-normal">
-                    {BACKGROUND_LABELS[optionMode].description}
+                    {isActive && isAutoReduced
+                      ? 'Otomatis · perangkat kurang kuat untuk PS2'
+                      : BACKGROUND_LABELS[optionMode].description}
                   </span>
                 </span>
               </button>

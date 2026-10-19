@@ -8,6 +8,11 @@ import {
   useMemo,
   useState,
 } from 'react'
+import {
+  AUTO_BACKGROUND_STORAGE_KEY,
+  detectInitialMode,
+  startPerformanceProbe,
+} from './devicePerformance'
 
 /**
  * State pilihan latar belakang pengunjung.
@@ -52,6 +57,9 @@ interface BackgroundContextValue {
    *  yang butuh nilai pasti sebaiknya menunggu sampai non-null. */
   mode: BackgroundMode | null
   setMode: (nextMode: BackgroundMode) => void
+  /** true kalau mode aktif dipilih OTOMATIS karena perangkat dinilai
+   *  kurang kuat (bukan pilihan pengunjung). */
+  isAutoReduced: boolean
   /** Pindah ke mode berikutnya (ps2 → ambient → normal → ps2). */
   cycleMode: () => void
 }
@@ -69,12 +77,29 @@ function readStoredMode(): BackgroundMode | null {
   }
 }
 
+/** Hasil deteksi otomatis dari kunjungan sebelumnya (kalau ada). */
+function readAutoMode(): BackgroundMode | null {
+  try {
+    const storedValue = window.localStorage.getItem(AUTO_BACKGROUND_STORAGE_KEY)
+    return isBackgroundMode(storedValue) ? storedValue : null
+  } catch {
+    return null
+  }
+}
+
+/** Urutan prioritas: pilihan manual → hasil ukur sebelumnya → tebakan
+ *  statis perangkat. Harus sama dengan inline script di app/layout.tsx. */
+function resolveInitialMode(): BackgroundMode {
+  return readStoredMode() ?? readAutoMode() ?? detectInitialMode()
+}
+
 export function BackgroundProvider({
   children,
 }: {
   children: React.ReactNode
 }) {
   const [mode, setModeState] = useState<BackgroundMode | null>(null)
+  const [isAutoReduced, setIsAutoReduced] = useState(false)
 
   // Mount: ambil nilai yang sudah ditetapkan inline script. Kalau
   // atributnya hilang/rusak (mis. script diblokir), hitung ulang dengan
@@ -83,10 +108,33 @@ export function BackgroundProvider({
     const attributeValue = document.documentElement.getAttribute('data-bkg')
     const resolvedMode = isBackgroundMode(attributeValue)
       ? attributeValue
-      : (readStoredMode() ?? DEFAULT_BACKGROUND_MODE)
+      : resolveInitialMode()
     document.documentElement.setAttribute('data-bkg', resolvedMode)
     setModeState(resolvedMode)
+    // Mode ini hasil otomatis kalau pengunjung belum pernah memilih sendiri
+    // dan mode-nya bukan default.
+    setIsAutoReduced(
+      readStoredMode() === null && resolvedMode !== DEFAULT_BACKGROUND_MODE,
+    )
   }, [])
+
+  // Ukur performa nyata saat PS2 aktif. Hanya kalau pengunjung belum
+  // memilih sendiri — pilihan manual tidak pernah ditimpa. Kalau lambat,
+  // turun ke ambient dan INGAT di kunci terpisah (kunjungan berikutnya
+  // langsung ringan). Pengunjung tetap bisa memilih PS2 lagi secara manual.
+  useEffect(() => {
+    if (mode !== 'ps2' || readStoredMode() !== null) return
+    return startPerformanceProbe(() => {
+      document.documentElement.setAttribute('data-bkg', 'ambient')
+      setModeState('ambient')
+      setIsAutoReduced(true)
+      try {
+        window.localStorage.setItem(AUTO_BACKGROUND_STORAGE_KEY, 'ambient')
+      } catch {
+        // Tidak persisten — tidak apa-apa.
+      }
+    })
+  }, [mode])
 
   // Sinkron antar-tab: ubah pilihan di satu tab, tab lain ikut berubah.
   useEffect(() => {
@@ -104,6 +152,7 @@ export function BackgroundProvider({
 
   const setMode = useCallback((nextMode: BackgroundMode) => {
     setModeState(nextMode)
+    setIsAutoReduced(false)
     document.documentElement.setAttribute('data-bkg', nextMode)
     try {
       window.localStorage.setItem(BACKGROUND_STORAGE_KEY, nextMode)
@@ -122,8 +171,8 @@ export function BackgroundProvider({
   }, [setMode])
 
   const contextValue = useMemo(
-    () => ({ mode, setMode, cycleMode }),
-    [mode, setMode, cycleMode]
+    () => ({ mode, setMode, isAutoReduced, cycleMode }),
+    [mode, setMode, isAutoReduced, cycleMode]
   )
 
   return (

@@ -105,6 +105,8 @@ export default function Background() {
           <i className="bkg-blob bkg-blob-b" />
           <i className="bkg-blob bkg-blob-c" />
           <i className="bkg-blob bkg-blob-d" />
+          <i className="bkg-amb-grid" />
+          <i className="bkg-amb-scan" />
         </div>
 
         <div className="bkg-layer bkg-normal" />
