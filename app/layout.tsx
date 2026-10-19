@@ -5,6 +5,8 @@ import { LanguageProvider } from '@/lib/i18n/LanguageProvider'
 import { ThemeProvider } from '@/lib/theme/ThemeProvider'
 import CommandPalette from '@/components/ui/CommandPalette'
 import Background from '@/components/ui/Background'
+import FloatingBackgroundSwitcher from '@/components/ui/FloatingBackgroundSwitcher'
+import SkipLink from '@/components/ui/SkipLink'
 import { BackgroundProvider } from '@/lib/background/useBackground'
 import { SEO_DEFAULTS, SITE_URL } from '@/lib/seo'
 import './globals.css'
@@ -59,12 +61,11 @@ export const metadata: Metadata = {
       ? `@${SEO_DEFAULTS.twitterHandle}`
       : undefined,
   },
+  // index/follow sengaja TIDAK ditulis: itu perilaku default, dan tag
+  // eksplisit "index, follow" muncul berdampingan dengan "noindex" otomatis
+  // Next.js di halaman 404 (dua tag robots yang saling bertentangan).
   robots: {
-    index: true,
-    follow: true,
     googleBot: {
-      index: true,
-      follow: true,
       'max-image-preview': 'large',
       'max-snippet': -1,
       'max-video-preview': -1,
@@ -77,7 +78,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#000000',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+  ],
   // viewportFit: 'cover' membuat konten bisa meluas ke area di belakang
   // notch/Dynamic Island (bukan cuma dibatasi kotak aman browser),
   // supaya env(safe-area-inset-*) di CSS bisa dipakai untuk padding yang
@@ -139,17 +143,17 @@ export default function RootLayout({
             `,
           }}
         />
-        <a href="#main-content" className="skip-link">
-          Skip to content
-        </a>
         <ThemeProvider>
           <LanguageProvider>
+            {/* Tautan fokusable pertama di halaman (urutan DOM = urutan Tab). */}
+            <SkipLink />
             <BackgroundProvider>
               {/* Latar global (z-index -1). Di dalam ThemeProvider karena
                   PS2 membaca tema aktif; di dalam BackgroundProvider karena
                   membaca pilihan pengunjung. Chunk animasi PS2 di-lazy-load
                   (lihat components/ui/Background.tsx). */}
               <Background />
+              <FloatingBackgroundSwitcher />
               {children}
               <CommandPalette />
             </BackgroundProvider>

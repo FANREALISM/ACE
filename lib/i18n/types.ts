@@ -14,6 +14,22 @@ export interface Dictionary {
     timeline: string
     contact: string
   }
+  /** Label navbar: bahasa biasa (bukan gaya terminal seperti menu Hero)
+   *  supaya mudah dipahami sekilas. */
+  navbar: {
+    about: string
+    timeline: string
+    skills: string
+    projects: string
+    certificates: string
+    contact: string
+    mainNav: string
+    skipToContent: string
+    backToTop: string
+    openMenu: string
+    closeMenu: string
+    search: string
+  }
   hero: {
     roleFallback: string
     scrollHint: string
@@ -28,6 +44,8 @@ export interface Dictionary {
     career: string
     education: string
     present: string
+    showMore: string
+    showLess: string
   }
   skills: {
     heading: string

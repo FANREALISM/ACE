@@ -19,7 +19,7 @@ export default function LanguageSwitcher({
     return (
       <button
         onClick={toggleLocale}
-        aria-label="Switch language"
+        aria-label={`${locale === 'id' ? 'ID / EN' : 'EN / ID'}: ${locale === 'id' ? 'ganti bahasa' : 'switch language'}`}
         className="flex items-center justify-center min-h-11 font-mono text-xs uppercase tracking-wider px-3 rounded-full border border-white/15 text-white/60 hover:border-cyan-400/50 hover:text-cyan-300 transition-colors"
       >
         {locale === 'id' ? 'ID' : 'EN'} / {locale === 'id' ? 'EN' : 'ID'}
@@ -30,7 +30,7 @@ export default function LanguageSwitcher({
   return (
     <button
       onClick={toggleLocale}
-      aria-label="Switch language"
+      aria-label={`${locale === 'id' ? 'ID / EN' : 'EN / ID'}: ${locale === 'id' ? 'ganti bahasa' : 'switch language'}`}
       className="group flex items-center gap-3 py-3 cursor-pointer select-none"
     >
       <span

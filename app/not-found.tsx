@@ -1,4 +1,11 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
+
+/** Judul jelas untuk tab/riwayat browser. noindex dipasang otomatis oleh
+ *  Next.js untuk halaman not-found, tidak perlu diulang di sini. */
+export const metadata: Metadata = {
+  title: 'Halaman tidak ditemukan',
+}
 
 /** Halaman 404 kustom (Next.js App Router not-found.tsx convention) —
  *  dipicu otomatis lewat notFound() (mis. di /projects/[id] untuk
@@ -6,7 +13,11 @@ import Link from 'next/link'
  *  manapun. */
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-black text-white text-center">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="focus-visible:outline-none min-h-screen flex items-center justify-center px-6 bg-black text-white text-center"
+    >
       <div>
         <p className="font-mono text-6xl font-bold text-gradient mb-4">404</p>
         <h1 className="text-2xl font-bold mb-3">Halaman tidak ditemukan.</h1>
@@ -20,6 +31,6 @@ export default function NotFound() {
           Kembali ke Beranda
         </Link>
       </div>
-    </div>
+    </main>
   )
 }

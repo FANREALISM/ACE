@@ -306,6 +306,9 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                 // otomatis kembali begitu lepas. transform-only (scale),
                 // tidak ada listener tambahan yang perlu dikelola manual.
                 whileTap={{ scale: 0.98 }}
+                // Mencegah Framer Motion menjadikan seluruh kartu titik Tab
+                // tambahan (tautan sungguhan di dalam kartu sudah fokusable).
+                tabIndex={-1}
                 transition={{ duration: 0.5, delay: projectIndex * 0.1 }}
                 onMouseEnter={(mouseEvent) =>
                   handleCardMouseEnter(project.id, mouseEvent.currentTarget)

@@ -22,6 +22,7 @@ import {
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import { useTheme } from '@/lib/theme/ThemeProvider'
 import { useBackground } from '@/lib/background/useBackground'
+import { useDialogFocus } from '@/lib/a11y/useDialogFocus'
 import { BACKGROUND_LABELS } from '@/components/ui/BackgroundSwitcher'
 
 /** Satu entri command di palette — section untuk lompat ke bagian
@@ -54,6 +55,12 @@ export default function CommandPalette() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  // Fokus terkunci di dalam palette, Escape menutup, fokus kembali ke
+  // pemicu saat tertutup.
+  useDialogFocus(isOpen, panelRef, () => setIsOpen(false), {
+    initialFocusRef: searchInputRef,
+  })
 
   // Cmd+K (Mac) / Ctrl+K (Windows/Linux) membuka palette dari mana saja.
   // Dicegah default browser behaviour-nya (biasanya fokus address bar).
@@ -221,9 +228,9 @@ export default function CommandPalette() {
    *  highlight, Enter untuk eksekusi command yang di-highlight, Escape
    *  untuk tutup. */
   function handleSearchKeyDown(keyboardEvent: React.KeyboardEvent) {
-    if (keyboardEvent.key === 'Escape') {
-      setIsOpen(false)
-    } else if (keyboardEvent.key === 'ArrowDown') {
+    // Escape ditangani useDialogFocus (berlaku walau fokus ada di tombol
+    // hasil, bukan hanya di kolom pencarian).
+    if (keyboardEvent.key === 'ArrowDown') {
       keyboardEvent.preventDefault()
       setSelectedIndex((currentIndex) =>
         Math.min(currentIndex + 1, filteredCommands.length - 1)
@@ -260,6 +267,7 @@ export default function CommandPalette() {
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             onClick={(clickEvent) => clickEvent.stopPropagation()}
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
@@ -267,7 +275,7 @@ export default function CommandPalette() {
             className="relative w-full max-w-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
           >
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-              <Search size={16} className="text-white/40 shrink-0" />
+              <Search size={16} aria-hidden="true" className="text-white/40 shrink-0" />
               <input
                 ref={searchInputRef}
                 value={searchQuery}
@@ -308,7 +316,7 @@ export default function CommandPalette() {
                     <CommandIcon size={15} />
                     <span className="flex-1">{command.label}</span>
                     {command.hint && (
-                      <span className="text-[10px] font-mono uppercase text-white/25">
+                      <span className="text-[10px] font-mono uppercase text-white/50">
                         {command.hint}
                       </span>
                     )}

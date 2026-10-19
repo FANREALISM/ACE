@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { SITE_URL } from '@/lib/seo'
+import { SITE_URL, buildPageMetadata, serializeJsonLd } from '@/lib/seo'
 import type { Metadata } from 'next'
 import { ArrowLeft, ExternalLink, Github } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
@@ -27,38 +27,22 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id: projectId } = await params
   const project = await getProjectById(projectId)
-  if (!project) return { title: 'Project Not Found' }
-
-  const pageTitle = `${project.title} — Case Study`
-  const siteUrl = SITE_URL
-  const canonicalUrl = `${siteUrl}/projects/${projectId}`
-
-  // Sebelumnya halaman ini cuma punya title+description — kalau di-share
-  // di WhatsApp/LinkedIn, link preview-nya jatuh ke og:image DEFAULT
-  // situs (foto profil dari opengraph-image.tsx), bukan gambar proyek
-  // yang sebenarnya relevan. openGraph.images di sini override itu KHUSUS
-  // untuk halaman case study, sama prinsipnya dengan catatan di
-  // app/page.tsx soal openGraph.images override file convention.
-  return {
-    title: pageTitle,
-    description: project.description,
-    alternates: {
-      canonical: canonicalUrl,
-    },
-    openGraph: {
-      title: pageTitle,
-      description: project.description,
-      url: canonicalUrl,
-      type: 'article',
-      images: project.image_url ? [{ url: project.image_url }] : undefined,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: pageTitle,
-      description: project.description,
-      images: project.image_url ? [project.image_url] : undefined,
-    },
+  if (!project) {
+    return { title: 'Project Not Found', robots: { index: false, follow: false } }
   }
+
+  // buildPageMetadata (lib/seo.ts) mengisi title, canonical, Open Graph
+  // (siteName, locale) dan Twitter Card sekaligus. Gambar: gambar proyek
+  // kalau ada, kalau tidak jatuh ke gambar OG situs. Sebelumnya proyek
+  // TANPA gambar kehilangan og:image sama sekali — openGraph di level page
+  // menimpa file convention opengraph-image.tsx milik layout.
+  return buildPageMetadata({
+    title: `${project.title} — Case Study`,
+    description: project.description,
+    path: `/projects/${projectId}`,
+    type: 'article',
+    image: project.image_url ?? undefined,
+  })
 }
 
 // Baris label kecil untuk tiap bagian case study — dipisah jadi
@@ -124,23 +108,52 @@ export default async function ProjectCaseStudyPage({
   // JSON-LD CreativeWork — membantu Google memahami ini sebagai konten
   // portofolio/karya, bukan cuma halaman teks generik. Tidak render apa
   // pun secara visual.
-  const siteUrl = SITE_URL
-  const creativeWorkStructuredData = {
+  const pageUrl = `${SITE_URL}/projects/${projectId}`
+  // @graph: CreativeWork (karya ini, ditautkan ke Person di halaman utama
+  // lewat @id yang sama) + BreadcrumbList (Beranda › Proyek › judul) —
+  // breadcrumb inilah yang tampil sebagai jejak di hasil pencarian Google.
+  const structuredData = {
     '@context': 'https://schema.org',
-    '@type': 'CreativeWork',
-    name: project.title,
-    description: project.description,
-    url: `${siteUrl}/projects/${projectId}`,
-    image: project.image_url ?? undefined,
-    keywords: project.tech_stack.join(', '),
+    '@graph': [
+      {
+        '@type': 'CreativeWork',
+        '@id': `${pageUrl}#work`,
+        name: project.title,
+        description: project.description,
+        url: pageUrl,
+        image: project.image_url ?? undefined,
+        keywords: project.tech_stack.join(', '),
+        dateCreated: project.created_at,
+        inLanguage: 'id-ID',
+        author: { '@id': `${SITE_URL}/#person` },
+        isPartOf: { '@id': `${SITE_URL}/#website` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Beranda', item: SITE_URL },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Proyek',
+            item: `${SITE_URL}/#projects`,
+          },
+          { '@type': 'ListItem', position: 3, name: project.title, item: pageUrl },
+        ],
+      },
+    ],
   }
 
   return (
-    <main className="min-h-screen text-white">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-screen text-white focus-visible:outline-none"
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(creativeWorkStructuredData),
+          __html: serializeJsonLd(structuredData),
         }}
       />
       <div className="max-w-3xl mx-auto px-6 py-20">

@@ -19,8 +19,9 @@ export const BACKGROUND_LABELS: Record<
 }
 
 interface BackgroundSwitcherProps {
-  /** 'default' = besar bergaya menu Hero. 'compact' = pill kecil Navbar. */
-  variant?: 'default' | 'compact'
+  /** 'default' = besar bergaya menu Hero. 'compact' = pill kecil Navbar.
+   *  'floating' = pill bergaya kaca untuk tombol melayang pojok layar. */
+  variant?: 'default' | 'compact' | 'floating'
   /** Arah popover. 'up' untuk elemen di bagian bawah layar. */
   placement?: 'down' | 'up'
   /** Sisi tempat popover menempel pada tombol. */
@@ -113,7 +114,9 @@ export default function BackgroundSwitcher({
   }
 
   const triggerClassName =
-    variant === 'compact'
+    variant === 'floating'
+      ? 'flex items-center justify-center min-h-11 font-mono text-[11px] sm:text-xs uppercase tracking-wider px-3.5 rounded-full border border-white/20 text-white/70 backdrop-blur-md shadow-lg hover:border-cyan-400/50 hover:text-cyan-300 transition-colors whitespace-nowrap'
+      : variant === 'compact'
       ? 'flex items-center justify-center min-h-11 font-mono text-xs uppercase tracking-wider px-3 rounded-full border border-white/15 text-white/60 hover:border-cyan-400/50 hover:text-cyan-300 transition-colors whitespace-nowrap'
       : 'group flex items-center gap-3 py-2 md:py-3 cursor-pointer select-none font-mono font-bold text-[clamp(1.05rem,5.4vw,1.5rem)] md:text-3xl tracking-wider uppercase text-white/80 hover:text-purple-300 transition-colors whitespace-nowrap'
 
@@ -126,8 +129,15 @@ export default function BackgroundSwitcher({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? listboxId : undefined}
-        aria-label={`Latar belakang: ${currentLabel}. Ubah pilihan latar belakang`}
+        // Nama aksesibel HARUS memuat teks yang terlihat (WCAG 2.5.3):
+        // pengguna suara mengucapkan "BKG: NORMAL", bukan kalimat lain.
+        aria-label={`BKG: ${currentLabel}, ubah latar belakang`}
         className={triggerClassName}
+        style={
+          variant === 'floating'
+            ? { backgroundColor: 'var(--panel-bg)' }
+            : undefined
+        }
       >
         [ BKG: {currentLabel} ]
       </button>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, CheckCircle2 } from 'lucide-react'
 
@@ -15,6 +15,14 @@ type SubmissionStatus = 'idle' | 'sending' | 'sent' | 'error'
  */
 export default function ContactForm() {
   const supabase = createClient()
+  // id unik per field supaya <label htmlFor> benar-benar terhubung ke input
+  // (versi lama: label tanpa htmlFor — pembaca layar membacakan "edit text"
+  // tanpa nama, dan mengklik label tidak memfokuskan input).
+  const formId = useId()
+  const nameFieldId = `${formId}-name`
+  const emailFieldId = `${formId}-email`
+  const messageFieldId = `${formId}-message`
+  const errorId = `${formId}-error`
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
@@ -65,8 +73,15 @@ export default function ContactForm() {
 
   if (submissionStatus === 'sent') {
     return (
-      <div className="glass-card p-8 text-center max-w-md mx-auto">
-        <CheckCircle2 className="mx-auto mb-3 text-emerald-400" size={32} />
+      <div
+        role="status"
+        className="glass-card p-8 text-center max-w-md mx-auto"
+      >
+        <CheckCircle2
+          className="mx-auto mb-3 text-emerald-400"
+          size={32}
+          aria-hidden="true"
+        />
         <p className="text-white/80 font-medium mb-1">Pesan terkirim!</p>
         <p className="text-white/40 text-sm">
           Terima kasih sudah menghubungi — akan dibalas secepatnya.
@@ -78,6 +93,7 @@ export default function ContactForm() {
   return (
     <form
       onSubmit={handleFormSubmit}
+      aria-label="Formulir kontak"
       className="glass-card p-6 max-w-md mx-auto space-y-4 text-left"
     >
       {/* Honeypot — off-screen, bukan display:none/hidden (beberapa bot
@@ -102,8 +118,13 @@ export default function ContactForm() {
       />
 
       <div>
-        <label className="block text-sm text-white/50 mb-1">Nama</label>
+        <label htmlFor={nameFieldId} className="block text-sm text-white/50 mb-1">
+          Nama
+        </label>
         <input
+          id={nameFieldId}
+          name="name"
+          autoComplete="name"
           value={name}
           onChange={(changeEvent) => setName(changeEvent.target.value)}
           required
@@ -112,9 +133,14 @@ export default function ContactForm() {
         />
       </div>
       <div>
-        <label className="block text-sm text-white/50 mb-1">Email</label>
+        <label htmlFor={emailFieldId} className="block text-sm text-white/50 mb-1">
+          Email
+        </label>
         <input
+          id={emailFieldId}
+          name="email"
           type="email"
+          autoComplete="email"
           value={email}
           onChange={(changeEvent) => setEmail(changeEvent.target.value)}
           required
@@ -123,8 +149,14 @@ export default function ContactForm() {
         />
       </div>
       <div>
-        <label className="block text-sm text-white/50 mb-1">Pesan</label>
+        <label htmlFor={messageFieldId} className="block text-sm text-white/50 mb-1">
+          Pesan
+        </label>
         <textarea
+          id={messageFieldId}
+          name="message"
+          aria-invalid={errorMessage ? true : undefined}
+          aria-describedby={errorMessage ? errorId : undefined}
           value={message}
           onChange={(changeEvent) => setMessage(changeEvent.target.value)}
           required
@@ -134,14 +166,20 @@ export default function ContactForm() {
         />
       </div>
 
-      {errorMessage && <p className="text-sm text-red-400">{errorMessage}</p>}
+      {/* role="alert": pesan error diumumkan pembaca layar seketika muncul
+          (versi lama muncul diam-diam, hanya terlihat oleh yang melihat). */}
+      {errorMessage && (
+        <p id={errorId} role="alert" className="text-sm text-red-400">
+          {errorMessage}
+        </p>
+      )}
 
       <button
         type="submit"
         disabled={submissionStatus === 'sending'}
         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
       >
-        <Send size={15} />
+        <Send size={15} aria-hidden="true" />
         {submissionStatus === 'sending' ? 'Mengirim...' : 'Kirim Pesan'}
       </button>
     </form>

@@ -9,7 +9,6 @@ import { menuItems, type MenuItem } from '@/lib/menuItems'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import ThemeToggle from '@/components/ui/ThemeToggle'
-import BackgroundSwitcher from '@/components/ui/BackgroundSwitcher'
 import MagneticButton from '@/components/ui/MagneticButton'
 
 interface MenuButtonProps {
@@ -116,6 +115,13 @@ export default function Hero({ profile }: { profile: Profile | null }) {
     [0, 0.5, 0.95],
     [1, 1, 0]
   )
+  // Setelah benar-benar memudar, Hero harus keluar dari urutan Tab dan
+  // pohon aksesibilitas: opacity 0 saja tetap bisa difokus keyboard —
+  // pengguna menekan Tab di tengah halaman dan fokus mendarat pada
+  // tautan tak terlihat (halaman bahkan bisa melompat ke atas).
+  const heroVisibility = useTransform(heroScrollProgress, (progress) =>
+    progress >= 0.95 ? 'hidden' : 'visible'
+  )
   const heroTranslateY = useTransform(
     heroScrollProgress,
     [0, 0.5, 1],
@@ -185,7 +191,11 @@ export default function Hero({ profile }: { profile: Profile | null }) {
       </div>
 
       <motion.div
-        style={{ opacity: heroOpacity, y: heroTranslateY }}
+        style={{
+          opacity: heroOpacity,
+          y: heroTranslateY,
+          visibility: heroVisibility,
+        }}
         className="relative z-10 w-full max-w-6xl mx-auto px-6 md:px-12 grid md:grid-cols-2 gap-8 md:gap-16 items-center"
       >
         {/* Kolom kiri: foto profil + nama + role + CV */}
@@ -252,11 +262,16 @@ export default function Hero({ profile }: { profile: Profile | null }) {
               const displayName = profile?.name ?? 'AFFAN RABBANI'
               return (
                 <h1
+                  // `visible` (visibility: visible) menimpa visibility:hidden milik
+                  // pembungkus Hero setelah memudar: tautan & tombol keluar dari
+                  // urutan Tab, tapi <h1> tetap ada di pohon aksesibilitas — pembaca
+                  // layar yang melompat antar heading tidak kehilangan judul halaman.
+                  // Teksnya sendiri tidak terlihat karena opacity pembungkus 0.
                   aria-label={displayName}
                   // Fluid di mobile: 8.4vw dikunci antara 1.6rem–2.25rem supaya nama
                   // panjang (13+ karakter monospace) tidak meluber di layar 320px,
                   // tapi tetap sebesar text-4xl di layar lebar.
-                  className="font-mono font-bold uppercase text-[clamp(1.6rem,8.4vw,2.25rem)] md:text-6xl tracking-tight text-white mb-3"
+                  className="visible font-mono font-bold uppercase text-[clamp(1.6rem,8.4vw,2.25rem)] md:text-6xl tracking-tight text-white mb-3"
                 >
                   {/* Animasi stagger per-karakter — sekali jalan saat
                       mount, tidak ada biaya berkelanjutan setelahnya
@@ -316,10 +331,9 @@ export default function Hero({ profile }: { profile: Profile | null }) {
               label={translations.nav[menuItem.key]}
             />
           ))}
-          <div className="pt-2 border-t border-white/10 mt-2 flex flex-wrap items-center gap-x-4 gap-y-3">
+          <div className="pt-2 border-t border-white/10 mt-2 flex items-center gap-4">
             <LanguageSwitcher />
             <ThemeToggle />
-            <BackgroundSwitcher placement="up" align="left" />
           </div>
         </nav>
       </motion.div>

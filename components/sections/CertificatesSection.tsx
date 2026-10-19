@@ -214,14 +214,19 @@ export default function CertificatesSection({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileTap={{ scale: 0.98 }}
+              // Framer Motion menjadikan elemen ber-whileTap otomatis bisa
+              // difokus (tabindex=0) kecuali tabindex sudah ada. Kartu ini
+              // bukan kontrol — tombol di dalamnya yang jadi titik fokus.
+              tabIndex={-1}
               transition={{ delay: certificateIndex * 0.1 }}
               onMouseEnter={(mouseEvent) =>
                 handleCardMouseEnter(certificate.id, mouseEvent.currentTarget)
               }
               onMouseLeave={handleCardMouseLeave}
               onMouseMove={handleCardMouseMove}
-              onClick={() => setOpenCertificate(certificate)}
-              className="relative group glass-card p-6 hover:border-emerald-400/40 transition-colors cursor-pointer h-full"
+              // Cincin fokus di KARTU (bukan di teks judul saja) saat tombol di
+              // dalamnya difokus keyboard.
+              className="relative group glass-card p-6 hover:border-emerald-400/40 transition-colors cursor-pointer h-full [&:has(:focus-visible)]:outline [&:has(:focus-visible)]:outline-2 [&:has(:focus-visible)]:outline-offset-2 [&:has(:focus-visible)]:outline-cyan-400/80"
             >
               {/* Spotlight — sama persis dengan ProjectsGrid.tsx, warna
                   emerald menyesuaikan aksen certificate. */}
@@ -245,7 +250,21 @@ export default function CertificatesSection({
                   />
                 </div>
               )}
-              <h3 className="font-semibold mb-2">{certificate.title}</h3>
+              {/* Tombol sungguhan yang "dibentangkan" menutupi seluruh kartu
+                  (after:absolute after:inset-0): klik di mana pun pada
+                  kartu tetap membuka detail, tapi sekarang bisa dijangkau
+                  dengan Tab dan dibuka dengan Enter/Spasi — sebelumnya
+                  kartu hanya merespons klik mouse (WCAG 2.1.1). */}
+              <h3 className="font-semibold mb-2">
+                <button
+                  type="button"
+                  onClick={() => setOpenCertificate(certificate)}
+                  aria-haspopup="dialog"
+                  className="text-left focus-visible:outline-none after:absolute after:inset-0 after:z-10 after:rounded-2xl"
+                >
+                  {certificate.title}
+                </button>
+              </h3>
               <p className="text-white/50 text-sm">{certificate.issuer}</p>
               {certificate.issue_date && (
                 <p className="text-white/30 text-xs mt-2">
@@ -260,6 +279,7 @@ export default function CertificatesSection({
       <Modal
         open={!!openCertificate}
         onClose={() => setOpenCertificate(null)}
+        ariaLabel={openCertificate?.title}
       >
         {openCertificate && (
           <div>

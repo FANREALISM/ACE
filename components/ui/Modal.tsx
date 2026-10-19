@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
+import { useDialogFocus } from '@/lib/a11y/useDialogFocus'
 
 interface ModalProps {
   open: boolean
   onClose: () => void
+  /** Nama dialog untuk pembaca layar (mis. judul sertifikat). */
+  ariaLabel?: string
   children: React.ReactNode
 }
 
@@ -16,25 +19,28 @@ interface ModalProps {
  * certificate — bukan project (project sudah tidak pakai modal, klik
  * card langsung navigasi ke website proyeknya).
  */
-export default function Modal({ open, onClose, children }: ModalProps) {
-  // Escape untuk menutup, dan kunci scroll body selama modal terbuka
-  // supaya konten di belakang tidak ikut ter-scroll bersamaan.
+export default function Modal({
+  open,
+  onClose,
+  ariaLabel = 'Detail',
+  children,
+}: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // Fokus masuk ke dialog, Tab berputar di dalamnya, Escape menutup, dan
+  // fokus kembali ke pemicu saat ditutup (lihat lib/a11y/useDialogFocus).
+  useDialogFocus(open, panelRef, onClose)
+
+  // Kunci scroll body selama modal terbuka supaya konten di belakang tidak
+  // ikut ter-scroll bersamaan.
   useEffect(() => {
     if (!open) return
-
-    function handleEscapeKey(keyboardEvent: KeyboardEvent) {
-      if (keyboardEvent.key === 'Escape') onClose()
-    }
-
-    window.addEventListener('keydown', handleEscapeKey)
     const previousBodyOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-
     return () => {
-      window.removeEventListener('keydown', handleEscapeKey)
       document.body.style.overflow = previousBodyOverflow
     }
-  }, [open, onClose])
+  }, [open])
 
   return (
     <AnimatePresence>
@@ -52,6 +58,10 @@ export default function Modal({ open, onClose, children }: ModalProps) {
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
           <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={ariaLabel}
             initial={{ opacity: 0, y: 20, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.97 }}
@@ -60,7 +70,7 @@ export default function Modal({ open, onClose, children }: ModalProps) {
             // memicu onClose dari overlay pembungkus di luar.
             onClick={(clickEvent) => clickEvent.stopPropagation()}
             style={{ backgroundColor: 'var(--panel-bg)' }}
-            className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 shadow-2xl"
+            className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 shadow-2xl focus:outline-none"
           >
             <button
               onClick={onClose}
@@ -68,7 +78,7 @@ export default function Modal({ open, onClose, children }: ModalProps) {
               style={{ backgroundColor: 'var(--chrome-fill)' }}
               className="absolute top-4 right-4 z-10 flex items-center justify-center min-w-11 min-h-11 rounded-full border border-white/10 text-white/60 hover:text-white hover:border-white/30 transition-colors"
             >
-              <X size={18} />
+              <X size={18} aria-hidden="true" />
             </button>
             {children}
           </motion.div>

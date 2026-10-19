@@ -139,6 +139,19 @@ export default async function Home() {
         url: SITE_URL,
         image: profile?.avatar_url ?? undefined,
         sameAs: [profile?.github_url, profile?.linkedin_url].filter(Boolean),
+        // Diturunkan dari data CMS yang sudah ada — Google memakainya untuk
+        // memahami keahlian, pendidikan, dan tempat kerja (knowledge panel).
+        knowsAbout: skills.map((skill) => skill.name),
+        alumniOf: timelineEntries
+          .filter((entry) => entry.type === 'education')
+          .map((entry) => ({
+            '@type': 'EducationalOrganization',
+            name: entry.organization,
+          })),
+        worksFor: timelineEntries
+          .filter((entry) => entry.type === 'career' && entry.is_current)
+          .slice(0, 1)
+          .map((entry) => ({ '@type': 'Organization', name: entry.organization }))[0],
       },
       {
         '@type': 'WebSite',
@@ -161,7 +174,7 @@ export default async function Home() {
         }}
       />
       <MorphingNavbar profile={profile} />
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1} className="focus-visible:outline-none">
         <Hero profile={profile} />
         <About sections={aboutSections} />
         <Timeline entries={timelineEntries} />
