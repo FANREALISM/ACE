@@ -16,6 +16,7 @@ import {
   Sun,
   Moon,
   Palette,
+  CircleHelp,
   CornerDownLeft,
   type LucideIcon,
 } from 'lucide-react'
@@ -190,6 +191,13 @@ export default function CommandPalette() {
         hint: 'Action',
         icon: Palette,
         run: () => cycleBackground(),
+      },
+      {
+        id: 'tutorial',
+        label: locale === 'en' ? 'Replay tutorial' : 'Putar ulang tutorial',
+        hint: 'Action',
+        icon: CircleHelp,
+        run: () => window.dispatchEvent(new CustomEvent('start-tutorial')),
       },
       {
         id: 'admin',

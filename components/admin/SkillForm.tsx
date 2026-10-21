@@ -4,6 +4,7 @@ import { useState } from 'react'
 import * as Icons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Skill } from '@/lib/types'
+import { Btn } from '@/components/admin/AdminUI'
 
 interface SkillFormProps {
   initial?: Partial<Skill>
@@ -65,34 +66,37 @@ export default function SkillForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="adm-panel space-y-5 p-5 sm:p-6">
+      <h2 className="adm-panel-title">
+        <span aria-hidden="true">▸</span>[ {initial ? 'EDIT_DATA' : 'NEW_ENTRY'} ]
+      </h2>
       <div>
-        <label className="block text-sm text-white/50 mb-1">
+        <label htmlFor="skillform-1" className="adm-label">
           Nama Skill
         </label>
-        <input
+        <input id="skillform-1"
           value={skillName}
           onChange={(changeEvent) => setSkillName(changeEvent.target.value)}
           required
           placeholder="mis. React, PHP, Figma"
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
       <div>
-        <label className="block text-sm text-white/50 mb-1">
+        <label htmlFor="skillform-2" className="adm-label">
           Kategori (opsional)
         </label>
-        <input
+        <input id="skillform-2"
           value={category ?? ''}
           onChange={(changeEvent) => setCategory(changeEvent.target.value)}
           placeholder="mis. Frontend, Backend, Tools"
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
       <div>
-        <label className="block text-sm text-white/50 mb-2">Ikon</label>
+        <label className="adm-label">Ikon</label>
         <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
           {ICON_OPTIONS.map((iconOption) => {
             const IconComponent = resolveIcon(iconOption)
@@ -105,11 +109,7 @@ export default function SkillForm({
                 title={iconOption}
                 aria-label={`Pilih ikon ${iconOption}`}
                 aria-pressed={isActiveIcon}
-                className={`flex items-center justify-center h-10 rounded-lg border transition-colors ${
-                  isActiveIcon
-                    ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
-                    : 'bg-black/40 border-white/10 text-white/50 hover:border-white/30'
-                }`}
+                className="adm-choice h-10"
               >
                 <IconComponent size={16} />
               </button>
@@ -119,20 +119,8 @@ export default function SkillForm({
       </div>
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="px-6 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
-        >
-          {isSaving ? 'Menyimpan...' : 'Simpan'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-6 py-2 rounded-lg border border-white/10 text-white/60 hover:text-white transition-colors"
-        >
-          Batal
-        </button>
+        <Btn type="submit" disabled={isSaving}>{isSaving ? 'MENYIMPAN...' : 'SIMPAN'}</Btn>
+        <Btn variant="ghost" onClick={onCancel}>BATAL</Btn>
       </div>
     </form>
   )

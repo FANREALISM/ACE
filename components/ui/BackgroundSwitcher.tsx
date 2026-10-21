@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
+import { Layers } from 'lucide-react'
 import {
   BACKGROUND_MODES,
   useBackground,
@@ -115,7 +116,7 @@ export default function BackgroundSwitcher({
 
   const triggerClassName =
     variant === 'floating'
-      ? 'flex items-center justify-center min-h-11 font-mono text-[11px] sm:text-xs uppercase tracking-wider px-3.5 rounded-full border border-white/20 text-white/70 backdrop-blur-md shadow-lg hover:border-cyan-400/50 hover:text-cyan-300 transition-colors whitespace-nowrap'
+      ? 'hud-chip hud-round-sm flex items-center justify-center min-h-11 w-11 sm:w-auto font-mono text-[11px] sm:text-xs uppercase tracking-wider px-0 sm:px-3.5 rounded-full border border-white/20 text-white/70 backdrop-blur-md shadow-lg hover:border-cyan-400/50 hover:text-cyan-300 transition-colors whitespace-nowrap'
       : variant === 'compact'
       ? 'flex items-center justify-center min-h-11 font-mono text-xs uppercase tracking-wider px-3 rounded-full border border-white/15 text-white/60 hover:border-cyan-400/50 hover:text-cyan-300 transition-colors whitespace-nowrap'
       : 'group flex items-center gap-3 py-2 md:py-3 cursor-pointer select-none font-mono font-bold text-[clamp(1.05rem,5.4vw,1.5rem)] md:text-3xl tracking-wider uppercase text-white/80 hover:text-purple-300 transition-colors whitespace-nowrap'
@@ -139,7 +140,16 @@ export default function BackgroundSwitcher({
             : undefined
         }
       >
-        [ BKG: {currentLabel} ]
+        {variant === 'floating' ? (
+          <>
+            {/* Mobile: tombol bulat berisi ikon saja (nama aksesibel tetap
+                dari aria-label). sm ke atas: label teks lengkap. */}
+            <Layers size={18} aria-hidden="true" className="sm:hidden" />
+            <span className="hidden sm:inline">[ BKG: {currentLabel} ]</span>
+          </>
+        ) : (
+          <>[ BKG: {currentLabel} ]</>
+        )}
       </button>
 
       {isOpen && (

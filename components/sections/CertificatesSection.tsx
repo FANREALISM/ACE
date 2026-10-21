@@ -169,7 +169,7 @@ export default function CertificatesSection({
       </Reveal>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8">
         {certificates.map((certificate, certificateIndex) => (
-          <div key={certificate.id} className="relative">
+          <Reveal key={certificate.id} className="relative" delay={Math.min(certificateIndex * 0.1, 0.4)}>
             {/* Bubble preview — fixed & ngikutin kursor, lebih besar dari
                 card aslinya (1.35x lebar card yang di-hover, diukur lewat
                 getBoundingClientRect, bukan angka tebakan). */}
@@ -210,15 +210,11 @@ export default function CertificatesSection({
             </AnimatePresence>
 
             <motion.article
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
               whileTap={{ scale: 0.98 }}
               // Framer Motion menjadikan elemen ber-whileTap otomatis bisa
               // difokus (tabindex=0) kecuali tabindex sudah ada. Kartu ini
               // bukan kontrol — tombol di dalamnya yang jadi titik fokus.
               tabIndex={-1}
-              transition={{ delay: certificateIndex * 0.1 }}
               onMouseEnter={(mouseEvent) =>
                 handleCardMouseEnter(certificate.id, mouseEvent.currentTarget)
               }
@@ -272,7 +268,7 @@ export default function CertificatesSection({
                 </p>
               )}
             </motion.article>
-          </div>
+          </Reveal>
         ))}
       </div>
 

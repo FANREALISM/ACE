@@ -5,6 +5,8 @@ import { LanguageProvider } from '@/lib/i18n/LanguageProvider'
 import { ThemeProvider } from '@/lib/theme/ThemeProvider'
 import CommandPalette from '@/components/ui/CommandPalette'
 import Background from '@/components/ui/Background'
+import { UIThemeProvider } from '@/lib/ui/UIThemeContext'
+import TutorialProvider from '@/lib/tutorial/TutorialProvider'
 import FloatingBackgroundSwitcher from '@/components/ui/FloatingBackgroundSwitcher'
 import SkipLink from '@/components/ui/SkipLink'
 import { BackgroundProvider } from '@/lib/background/useBackground'
@@ -154,6 +156,15 @@ export default function RootLayout({
                 }
               } catch (backgroundDetectionError) {}
               document.documentElement.setAttribute('data-bkg', resolvedBackground);
+
+              /* Tema UI (bentuk komponen): localStorage → default 'terminal'.
+                 Diset ke <html> SEBELUM hydrate agar tidak ada kedip. Kunci &
+                 nilai sama dengan lib/ui/UIThemeContext.tsx. */
+              var resolvedUI = 'terminal';
+              try {
+                if (localStorage.getItem('portfolio-ui') === 'game') resolvedUI = 'game';
+              } catch (uiDetectionError) {}
+              document.documentElement.setAttribute('data-ui', resolvedUI);
             `,
           }}
         />
@@ -161,16 +172,20 @@ export default function RootLayout({
           <LanguageProvider>
             {/* Tautan fokusable pertama di halaman (urutan DOM = urutan Tab). */}
             <SkipLink />
+            <UIThemeProvider>
             <BackgroundProvider>
               {/* Latar global (z-index -1). Di dalam ThemeProvider karena
                   PS2 membaca tema aktif; di dalam BackgroundProvider karena
                   membaca pilihan pengunjung. Chunk animasi PS2 di-lazy-load
                   (lihat components/ui/Background.tsx). */}
               <Background />
-              <FloatingBackgroundSwitcher />
-              {children}
-              <CommandPalette />
+              <TutorialProvider>
+                <FloatingBackgroundSwitcher />
+                {children}
+                <CommandPalette />
+              </TutorialProvider>
             </BackgroundProvider>
+            </UIThemeProvider>
           </LanguageProvider>
         </ThemeProvider>
         <Analytics />

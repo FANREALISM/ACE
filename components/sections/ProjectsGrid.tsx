@@ -162,7 +162,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
 
   if (projects.length === 0) {
     return (
-      <section id="projects" className="section-y px-6 text-center scroll-mt-20">
+      <section id="projects" data-tutorial="projects" className="section-y px-6 text-center scroll-mt-20">
         <p className="text-white/40">{translations.projects.empty}</p>
       </section>
     )
@@ -196,7 +196,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
     : projectsSortedByFeatured
 
   return (
-    <section id="projects" aria-labelledby="projects-heading" className="section-y px-6 max-w-6xl mx-auto scroll-mt-20">
+    <section id="projects" data-tutorial="projects" aria-labelledby="projects-heading" className="section-y px-6 max-w-6xl mx-auto scroll-mt-20">
       <Reveal>
         <h2 id="projects-heading" className="text-2xl sm:text-3xl font-bold mb-6 md:mb-8 text-center">
           {translations.projects.heading}{' '}
@@ -210,7 +210,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
         <div className="flex flex-wrap justify-center gap-2 md:gap-2.5 mb-8 md:mb-14">
           <button
             onClick={() => setActiveTechFilter(null)}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+            className={`hud-chip text-xs px-3 py-1.5 rounded-full border transition-colors ${
               activeTechFilter === null
                 ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
                 : 'bg-white/5 border-white/10 text-white/50 hover:border-white/30'
@@ -224,7 +224,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
               onClick={() =>
                 setActiveTechFilter(activeTechFilter === tech ? null : tech)
               }
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+              className={`hud-chip text-xs px-3 py-1.5 rounded-full border transition-colors ${
                 activeTechFilter === tech
                   ? 'bg-purple-500/20 border-purple-400/50 text-purple-300'
                   : 'bg-white/5 border-white/10 text-white/50 hover:border-white/30'
@@ -256,7 +256,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
           )
 
           return (
-            <div key={project.id} className="relative">
+            <Reveal key={project.id} className="relative" delay={Math.min(projectIndex * 0.1, 0.4)} duration={0.5}>
               {/* Hover preview bubble — desktop-only (see useHoverCapable).
                   pointer-events-none so it never intercepts the click.
                   Posisinya fixed & ngikutin kursor, lebih besar dari card
@@ -297,10 +297,9 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                 )}
               </AnimatePresence>
 
+              {/* Animasi muncul-saat-scroll ditangani <Reveal> (fail-safe, tanpa
+                  ketergantungan pada IntersectionObserver Framer Motion). */}
               <motion.article
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
                 // whileTap: feedback taktil sekejap saat card ditekan —
                 // Framer cuma menerapkan ini SELAMA jari/klik ditahan,
                 // otomatis kembali begitu lepas. transform-only (scale),
@@ -309,7 +308,6 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                 // Mencegah Framer Motion menjadikan seluruh kartu titik Tab
                 // tambahan (tautan sungguhan di dalam kartu sudah fokusable).
                 tabIndex={-1}
-                transition={{ duration: 0.5, delay: projectIndex * 0.1 }}
                 onMouseEnter={(mouseEvent) =>
                   handleCardMouseEnter(project.id, mouseEvent.currentTarget)
                 }
@@ -336,7 +334,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                     tepi card (-top-2 -right-2). */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 z-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  className="pointer-events-none absolute inset-0 z-0 rounded-2xl game:rounded-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
                     background:
                       'radial-gradient(400px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(34, 211, 238, 0.08), transparent 70%)',
@@ -348,7 +346,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                       backgroundImage:
                         'linear-gradient(to right, var(--gradient-from), var(--gradient-to))',
                     }}
-                    className="absolute -top-2 -right-2 z-10 text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-full text-black font-bold shadow-lg"
+                    className="absolute -top-2 -right-2 game:top-2 game:right-3 z-10 text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-full game:rounded-none text-black font-bold shadow-lg"
                   >
                     {translations.projects.featured}
                   </span>
@@ -365,7 +363,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                     />
                   </div>
                 )}
-                <h3 className="text-lg font-semibold mb-3">{project.title}</h3>
+                <h3 className="hud-title text-lg font-semibold mb-3">{project.title}</h3>
                 <p className="text-white/60 text-sm mb-5 line-clamp-2">
                   {projectDescription}
                 </p>
@@ -380,7 +378,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                         clickEvent.stopPropagation()
                         setActiveTechFilter(tech)
                       }}
-                      className="text-xs px-2 py-1 rounded-full bg-purple-500/10 border border-purple-400/30 text-purple-300 hover:bg-purple-500/20 transition-colors"
+                      className="hud-chip text-xs px-2 py-1 rounded-full bg-purple-500/10 border border-purple-400/30 text-purple-300 hover:bg-purple-500/20 transition-colors"
                     >
                       {tech}
                     </button>
@@ -420,7 +418,7 @@ export default function ProjectsGrid({ projects }: { projects: Project[] }) {
                   )}
                 </div>
               </motion.article>
-            </div>
+            </Reveal>
           )
         })}
       </div>

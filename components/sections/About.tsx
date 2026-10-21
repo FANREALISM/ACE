@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import Reveal from '@/components/ui/Reveal'
 import Image from 'next/image'
 import * as Icons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -27,13 +27,7 @@ export default function About({ sections }: { sections: AboutSection[] }) {
 
   return (
     <section id="about" aria-labelledby="about-heading" className="section-y px-6 max-w-5xl mx-auto scroll-mt-20">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="section-head-gap"
-      >
+      <Reveal className="section-head-gap">
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-cyan-400/60 mb-3">
           {translations.about.label}
         </p>
@@ -43,7 +37,7 @@ export default function About({ sections }: { sections: AboutSection[] }) {
             {translations.about.headingAccent}
           </span>
         </h2>
-      </motion.div>
+      </Reveal>
 
       {sections.length === 0 ? (
         <p className="text-white/40">{translations.about.empty}</p>
@@ -56,12 +50,10 @@ export default function About({ sections }: { sections: AboutSection[] }) {
             const isImageReversed = sectionIndex % 2 === 1
 
             return (
-              <motion.div
+              <Reveal
                 key={section.id}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.05 }}
+                delay={0.05}
+                duration={0.5}
                 className={`flex flex-col ${
                   section.image_url
                     ? isImageReversed
@@ -111,7 +103,7 @@ export default function About({ sections }: { sections: AboutSection[] }) {
                       : section.content}
                   </p>
                 </div>
-              </motion.div>
+              </Reveal>
             )
           })}
         </div>

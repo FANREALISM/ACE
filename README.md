@@ -688,6 +688,33 @@ sudah ada di `globals.css` sejak revisi tema light/dark (aturan itu
 menargetkan SEMUA `animation-duration`, bukan cuma punya Framer Motion),
 tidak perlu override terpisah.
 
+## UI Theme (Terminal / Game HUD) & Tutorial Onboarding
+
+Tiga sumbu tampilan yang independen, semuanya atribut di `<html>`:
+`data-theme` (dark/light), `data-bkg` (ps2/ambient/normal), `data-ui` (terminal/game).
+
+- **UI theme** — `lib/ui/UIThemeContext.tsx` (kunci localStorage `portfolio-ui`),
+  tombol `components/ui/UISwitcher.tsx`. Atribut diset sebelum hydrate oleh inline
+  script di `app/layout.tsx` (tanpa kedip). Komponen TIDAK memakai ternary: pakai
+  varian Tailwind `game:` / `terminal:` (plugin di `tailwind.config.ts`) dan kelas
+  `glass-card`, `hud-chip`, `hud-cut`, `hud-title` (CSS di `app/globals.css`, semua
+  di bawah `[data-ui='game']`, jadi Terminal tidak berubah).
+- **Catatan clip-path**: bentuk chamfer memotong SEMUA yang digambar di luar bentuk
+  (outline, `filter: drop-shadow`, elemen `absolute` yang menonjol). Cahaya hover dan
+  cincin fokus karena itu digambar DI DALAM (inset shadow pada `::before`).
+- **Tutorial** — `lib/tutorial/` (`steps.ts` = data langkah per UI + 2 bahasa,
+  `useTutorial.ts` = hook/logika, `TutorialProvider.tsx`) dan komponen
+  `components/ui/TutorialOverlay.tsx`, `TutorialReplayButton.tsx`. Target sorotan =
+  atribut `data-tutorial="..."`; target tak ditemukan/tersembunyi → dialog di tengah.
+  Status dilihat disimpan terpisah per UI: `tutorial_seen_terminal` dan
+  `tutorial_seen_gamehud` (cadangan: sessionStorage → memori bila localStorage ditolak).
+  Replay: tombol `[ ? ]` di navbar & footer, atau Command Palette; dari mana pun cukup
+  `window.dispatchEvent(new CustomEvent('start-tutorial'))`.
+- **Tombol melayang UI/BKG** (`FloatingBackgroundSwitcher`): di bawah 640 px berupa dua
+  tombol bulat berisi ikon; dari 640 px ke atas berupa label teks `[ UI: … ]` `[ BKG: … ]`.
+- **Reveal fail-safe** — semua animasi muncul-saat-scroll memakai `components/ui/Reveal.tsx`
+  (konten terlihat secara default; tidak ada lagi `whileInView` Framer Motion).
+
 ## Struktur Proyek
 
 ```

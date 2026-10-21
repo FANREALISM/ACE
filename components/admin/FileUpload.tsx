@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { FileText, ExternalLink } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -27,6 +27,7 @@ export default function FileUpload({
   accept = 'application/pdf',
   maxSizeMb = 10,
 }: FileUploadProps) {
+  const inputId = useId()
   const supabase = createClient()
   const [isUploading, setIsUploading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -67,31 +68,32 @@ export default function FileUpload({
 
   return (
     <div>
-      <label className="block text-sm text-white/50 mb-2">{label}</label>
+      <label htmlFor={inputId} className="adm-label">{label}</label>
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/10 bg-white/5 shrink-0 text-white/30">
+        <div className="adm-thumb h-12 w-12">
           <FileText size={20} />
         </div>
         <div className="flex-1">
           <input
+            id={inputId}
             type="file"
             accept={accept}
             onChange={handleFileSelected}
             disabled={isUploading}
-            className="text-sm text-white/60 file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border file:border-white/10 file:bg-white/5 file:text-white/70 file:cursor-pointer hover:file:bg-white/10"
+            className="adm-file"
           />
           {isUploading && (
-            <p className="text-xs text-cyan-400 mt-1">Mengunggah...</p>
+            <p className="adm-hint !text-adm-cyan">Mengunggah...</p>
           )}
           {errorMessage && (
-            <p className="text-xs text-red-400 mt-1">{errorMessage}</p>
+            <p className="adm-hint !text-adm-red">{errorMessage}</p>
           )}
           {currentUrl && !isUploading && (
             <a
               href={currentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline mt-1"
+              className="inline-flex items-center gap-1 text-xs text-adm-cyan hover:underline mt-1"
             >
               <ExternalLink size={11} /> Lihat file saat ini
             </a>

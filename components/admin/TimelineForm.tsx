@@ -4,6 +4,7 @@ import { useState } from 'react'
 import * as Icons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { TimelineEntry, TimelineEntryType } from '@/lib/types'
+import { Alert, Btn } from '@/components/admin/AdminUI'
 
 interface TimelineFormProps {
   initial?: Partial<TimelineEntry>
@@ -150,18 +151,16 @@ export default function TimelineForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="adm-panel space-y-5 p-5 sm:p-6">
+      <h2 className="adm-panel-title">
+        <span aria-hidden="true">▸</span>[ {initial ? 'EDIT_DATA' : 'NEW_ENTRY'} ]
+      </h2>
       {validationMessage && (
-        <p
-          role="alert"
-          className="text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3"
-        >
-          {validationMessage}
-        </p>
+        <Alert>{validationMessage}</Alert>
       )}
 
       <fieldset>
-        <legend className="block text-sm text-white/50 mb-2">Tipe</legend>
+        <legend className="adm-label">Tipe</legend>
         <div className="grid grid-cols-2 gap-2">
           {TYPE_OPTIONS.map((typeOption) => {
             const isActiveType = entryType === typeOption.value
@@ -171,11 +170,7 @@ export default function TimelineForm({
                 type="button"
                 onClick={() => handleTypeChange(typeOption.value)}
                 aria-pressed={isActiveType}
-                className={`py-2 rounded-lg border text-sm font-mono uppercase transition-colors ${
-                  isActiveType
-                    ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
-                    : 'bg-black/40 border-white/10 text-white/50 hover:border-white/30'
-                }`}
+                className="adm-choice"
               >
                 {typeOption.label}
               </button>
@@ -185,7 +180,7 @@ export default function TimelineForm({
       </fieldset>
 
       <div>
-        <label htmlFor="timeline-title" className="block text-sm text-white/50 mb-1">
+        <label htmlFor="timeline-title" className="adm-label">
           {entryType === 'career' ? 'Title (Posisi)' : 'Title (Gelar / Jurusan)'}
         </label>
         <input
@@ -198,14 +193,14 @@ export default function TimelineForm({
               ? 'mis. Full-Stack Developer'
               : 'mis. S1 Teknik Informatika'
           }
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
       <div>
         <label
           htmlFor="timeline-organization"
-          className="block text-sm text-white/50 mb-1"
+          className="adm-label"
         >
           {entryType === 'career'
             ? 'Organization (Perusahaan)'
@@ -219,7 +214,7 @@ export default function TimelineForm({
           placeholder={
             entryType === 'career' ? 'mis. PT Contoh Teknologi' : 'mis. Universitas Contoh'
           }
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
@@ -227,7 +222,7 @@ export default function TimelineForm({
         <div>
           <label
             htmlFor="timeline-start-date"
-            className="block text-sm text-white/50 mb-1"
+            className="adm-label"
           >
             Start Date
           </label>
@@ -237,13 +232,13 @@ export default function TimelineForm({
             value={startDate}
             onChange={(changeEvent) => setStartDate(changeEvent.target.value)}
             required
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+            className="adm-input"
           />
         </div>
         <div>
           <label
             htmlFor="timeline-end-date"
-            className="block text-sm text-white/50 mb-1"
+            className="adm-label"
           >
             End Date
           </label>
@@ -254,19 +249,19 @@ export default function TimelineForm({
             min={startDate || undefined}
             onChange={(changeEvent) => setEndDate(changeEvent.target.value)}
             disabled={isCurrent}
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="adm-input"
           />
         </div>
       </div>
 
-      <label className="flex items-center gap-3 text-sm text-white/70 cursor-pointer w-fit">
+      <label className="flex items-center gap-3 text-sm text-adm-text cursor-pointer w-fit">
         <input
           type="checkbox"
           checked={isCurrent}
           onChange={(changeEvent) =>
             handleCurrentToggle(changeEvent.target.checked)
           }
-          className="w-4 h-4 accent-cyan-400"
+          className="adm-check"
         />
         Present / Sekarang (masih berlangsung)
       </label>
@@ -274,7 +269,7 @@ export default function TimelineForm({
       <div>
         <label
           htmlFor="timeline-description"
-          className="block text-sm text-white/50 mb-1"
+          className="adm-label"
         >
           Deskripsi (opsional)
         </label>
@@ -284,12 +279,12 @@ export default function TimelineForm({
           onChange={(changeEvent) => setDescription(changeEvent.target.value)}
           rows={5}
           placeholder="Tanggung jawab, pencapaian, atau konteks singkat. Baris baru ikut ditampilkan."
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
       <div>
-        <p className="block text-sm text-white/50 mb-2">Ikon</p>
+        <p className="adm-label">Ikon</p>
         <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
           {ICON_OPTIONS.map((iconName) => {
             const IconComponent = resolveIcon(iconName)
@@ -302,11 +297,7 @@ export default function TimelineForm({
                 title={iconName}
                 aria-label={`Pilih ikon ${iconName}`}
                 aria-pressed={isActiveIcon}
-                className={`flex items-center justify-center h-10 rounded-lg border transition-colors ${
-                  isActiveIcon
-                    ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
-                    : 'bg-black/40 border-white/10 text-white/50 hover:border-white/30'
-                }`}
+                className="adm-choice h-10"
               >
                 <IconComponent size={16} />
               </button>
@@ -316,20 +307,8 @@ export default function TimelineForm({
       </div>
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="px-6 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
-        >
-          {isSaving ? 'Menyimpan...' : 'Simpan'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-6 py-2 rounded-lg border border-white/10 text-white/60 hover:text-white transition-colors"
-        >
-          Batal
-        </button>
+        <Btn type="submit" disabled={isSaving}>{isSaving ? 'MENYIMPAN...' : 'SIMPAN'}</Btn>
+        <Btn variant="ghost" onClick={onCancel}>BATAL</Btn>
       </div>
     </form>
   )

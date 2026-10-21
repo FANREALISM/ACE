@@ -7,6 +7,7 @@ import type { AboutSection } from '@/lib/types'
 import ImageUpload from './ImageUpload'
 import { translateToEnglish } from '@/lib/translate'
 import { Languages } from 'lucide-react'
+import { Btn } from '@/components/admin/AdminUI'
 
 interface AboutSectionFormProps {
   initial?: Partial<AboutSection>
@@ -99,68 +100,71 @@ export default function AboutSectionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="adm-panel space-y-5 p-5 sm:p-6">
+      <h2 className="adm-panel-title">
+        <span aria-hidden="true">▸</span>[ {initial ? 'EDIT_DATA' : 'NEW_ENTRY'} ]
+      </h2>
       <div>
-        <label className="block text-sm text-white/50 mb-1">
+        <label htmlFor="aboutsectionform-1" className="adm-label">
           Judul (format: SYSTEM_LABEL // SUBTITLE)
         </label>
-        <input
+        <input id="aboutsectionform-1"
           value={title}
           onChange={(changeEvent) => setTitle(changeEvent.target.value)}
           required
           placeholder="SYSTEM INITIALIZATION // THE FOUNDATION"
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm text-white/50">Isi Paragraf</label>
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+          <label className="adm-label">Isi Paragraf</label>
         </div>
         <textarea
           value={content}
           onChange={(changeEvent) => setContent(changeEvent.target.value)}
           required
           rows={6}
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm text-white/50">
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+          <label className="adm-label">
             Isi Paragraf (English) — opsional
           </label>
-          <button
-            type="button"
+          <Btn
+            variant="violet"
+            size="sm"
             onClick={handleAutoTranslate}
             disabled={isTranslating}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-400/30 text-purple-300 hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+            icon={<Languages size={13} aria-hidden="true" />}
           >
-            <Languages size={13} />
-            {isTranslating ? 'Menerjemahkan...' : 'Auto-translate to EN'}
-          </button>
+            {isTranslating ? 'MENERJEMAHKAN...' : 'AUTO_TRANSLATE_EN'}
+          </Btn>
         </div>
         <textarea
           value={contentEn}
           onChange={(changeEvent) => setContentEn(changeEvent.target.value)}
           rows={6}
           placeholder="Kosong = fallback ke teks Indonesia saat visitor pilih EN"
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-purple-400"
+          className="adm-input" data-accent="violet"
         />
         {translateErrorMessage && (
-          <p className="text-xs text-red-400 mt-1">
+          <p className="adm-hint !text-adm-red">
             {translateErrorMessage}
           </p>
         )}
-        <p className="text-xs text-white/30 mt-1">
+        <p className="adm-hint">
           Hasil auto-translate bisa diedit manual sebelum disimpan — jangan
           asumsikan mesin selalu benar, terutama istilah teknis.
         </p>
       </div>
 
       <div>
-        <label className="block text-sm text-white/50 mb-2">Ikon</label>
+        <label className="adm-label">Ikon</label>
         <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
           {ICON_OPTIONS.map((iconName) => {
             const IconComponent = resolveIcon(iconName)
@@ -173,11 +177,7 @@ export default function AboutSectionForm({
                 title={iconName}
                 aria-label={`Pilih ikon ${iconName}`}
                 aria-pressed={isActiveIcon}
-                className={`flex items-center justify-center h-10 rounded-lg border transition-colors ${
-                  isActiveIcon
-                    ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
-                    : 'bg-black/40 border-white/10 text-white/50 hover:border-white/30'
-                }`}
+                className="adm-choice h-10"
               >
                 <IconComponent size={16} />
               </button>
@@ -193,21 +193,9 @@ export default function AboutSectionForm({
         label="Gambar Section (opsional)"
       />
 
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="px-6 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
-        >
-          {isSaving ? 'Menyimpan...' : 'Simpan'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-6 py-2 rounded-lg border border-white/10 text-white/60 hover:text-white transition-colors"
-        >
-          Batal
-        </button>
+      <div className="flex flex-wrap gap-3 border-t border-adm-line/10 pt-5">
+        <Btn type="submit" disabled={isSaving}>{isSaving ? 'MENYIMPAN...' : 'SIMPAN'}</Btn>
+        <Btn variant="ghost" onClick={onCancel}>BATAL</Btn>
       </div>
     </form>
   )

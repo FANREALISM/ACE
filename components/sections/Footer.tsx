@@ -3,6 +3,7 @@
 import { ArrowUp, Sparkles } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
+import TutorialReplayButton from '@/components/ui/TutorialReplayButton'
 
 /** Satu entri di strip "Recently added" — project atau certificate yang
  *  baru ditambahkan, diurutkan dari yang terbaru (lihat app/page.tsx
@@ -66,6 +67,7 @@ export default function Footer({
             © {currentYear} {profile?.name ?? 'Portfolio'}. All rights
             reserved.
           </p>
+          <TutorialReplayButton variant="footer" dataTutorial="replay" />
           <button
             onClick={scrollToTop}
             className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-white/40 hover:text-cyan-400 transition-colors"

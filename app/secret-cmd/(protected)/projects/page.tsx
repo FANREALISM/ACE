@@ -4,7 +4,18 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import ProjectForm from '@/components/admin/ProjectForm'
 import type { Project } from '@/lib/types'
-import { Pencil, Trash2, Plus } from 'lucide-react'
+import { FolderGit2, Pencil, Plus } from 'lucide-react'
+import {
+  Alert,
+  Btn,
+  CardGrid,
+  ConfirmDeleteButton,
+  EmptyState,
+  IconBtn,
+  LoadingState,
+  PageHeader,
+  StatusTag,
+} from '@/components/admin/AdminUI'
 
 /** Halaman admin CRUD untuk Projects — list + create + edit + delete,
  *  semuanya di satu halaman (form muncul inline, bukan halaman
@@ -67,7 +78,6 @@ export default function ProjectsAdminPage() {
   }
 
   async function handleDelete(projectId: string) {
-    if (!confirm('Yakin hapus proyek ini?')) return
     setErrorMessage(null)
     const { error: deleteError } = await supabase
       .from('projects')
@@ -80,38 +90,39 @@ export default function ProjectsAdminPage() {
     loadProjects()
   }
 
+  const isEditorOpen = isFormVisible || editingProject !== null
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Kelola Projects</h1>
-        {!isFormVisible && !editingProject && (
-          <button
-            onClick={() => setIsFormVisible(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
-          >
-            <Plus size={16} /> Tambah Proyek
-          </button>
-        )}
-      </div>
+      <PageHeader
+        code="PROJECT_DB"
+        title="Kelola Projects"
+        description="Daftar proyek yang tampil di halaman publik. Proyek unggulan tampil lebih dulu; isi case study untuk membuka halaman detailnya."
+        actions={
+          !isEditorOpen && (
+            <Btn icon={<Plus size={15} aria-hidden="true" />} onClick={() => setIsFormVisible(true)}>
+              TAMBAH_PROYEK
+            </Btn>
+          )
+        }
+      />
 
       {errorMessage && (
-        <p className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3">
-          {errorMessage}
-        </p>
+        <div className="mb-6">
+          <Alert>{errorMessage}</Alert>
+        </div>
       )}
 
       {isFormVisible && (
         <div className="mb-8">
-          <ProjectForm
-            onSubmit={handleCreate}
-            onCancel={() => setIsFormVisible(false)}
-          />
+          <ProjectForm onSubmit={handleCreate} onCancel={() => setIsFormVisible(false)} />
         </div>
       )}
 
       {editingProject && (
         <div className="mb-8">
           <ProjectForm
+            key={editingProject.id}
             initial={editingProject}
             onSubmit={handleUpdate}
             onCancel={() => setEditingProject(null)}
@@ -120,45 +131,77 @@ export default function ProjectsAdminPage() {
       )}
 
       {isLoading ? (
-        <p className="text-white/40">Memuat...</p>
+        <LoadingState />
+      ) : projects.length === 0 ? (
+        <EmptyState code="NO_PROJECTS">Belum ada proyek. Tambahkan yang pertama.</EmptyState>
       ) : (
-        <div className="space-y-3">
-          {projects.map((project) => (
-            <div
-              key={project.id}
-              className="glass-card p-4 flex items-center justify-between"
-            >
-              <div>
-                <p className="font-medium">{project.title}</p>
-                <p className="text-sm text-white/40">
-                  {project.tech_stack.join(', ')}
+        <CardGrid>
+          {projects.map((project, projectIndex) => {
+            const hasCaseStudy = Boolean(
+              project.case_study_problem ||
+                project.case_study_approach ||
+                project.case_study_tradeoff ||
+                project.case_study_learnings
+            )
+            return (
+              <li key={project.id} className="adm-card flex flex-col gap-4 p-4">
+                <div className="flex items-start gap-3">
+                  {project.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={project.image_url}
+                      alt=""
+                      className="h-14 w-14 shrink-0 border border-adm-line/20 object-cover"
+                    />
+                  ) : (
+                    <div className="adm-thumb h-14 w-14">
+                      <FolderGit2 size={18} aria-hidden="true" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="adm-mono text-[0.65rem] tracking-[0.14em] text-adm-dim">
+                      ID_{String(projectIndex + 1).padStart(2, '0')}
+                    </p>
+                    <h2 className="truncate font-medium text-adm-text">{project.title}</h2>
+                  </div>
+                </div>
+
+                <p className="line-clamp-2 text-sm leading-relaxed text-adm-muted">
+                  {project.description}
                 </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setEditingProject(project)
-                    setIsFormVisible(false)
-                  }}
-                  aria-label="Edit proyek ini"
-                  className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"
-                >
-                  <Pencil size={16} />
-                </button>
-                <button
-                  onClick={() => handleDelete(project.id)}
-                  aria-label="Hapus proyek ini"
-                  className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-red-400"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          ))}
-          {projects.length === 0 && (
-            <p className="text-white/40">Belum ada proyek.</p>
-          )}
-        </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {project.is_featured && <StatusTag tone="amber" dot>FEATURED</StatusTag>}
+                  {hasCaseStudy && <StatusTag tone="violet">CASE_STUDY</StatusTag>}
+                  {project.tech_stack.slice(0, 4).map((techItem) => (
+                    <StatusTag key={techItem} tone="muted">{techItem}</StatusTag>
+                  ))}
+                  {project.tech_stack.length > 4 && (
+                    <StatusTag tone="muted">+{project.tech_stack.length - 4}</StatusTag>
+                  )}
+                </div>
+
+                <div className="mt-auto flex justify-end gap-2 border-t border-adm-line/10 pt-3">
+                  <IconBtn
+                    label={`Edit proyek ${project.title}`}
+                    onClick={() => {
+                      setEditingProject(project)
+                      setIsFormVisible(false)
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                  >
+                    <Pencil size={15} aria-hidden="true" />
+                    <span className="max-sm:sr-only">Edit</span>
+                  </IconBtn>
+                  <ConfirmDeleteButton
+                    itemName={`proyek ${project.title}`}
+                    onConfirm={() => handleDelete(project.id)}
+                  />
+                </div>
+              </li>
+            )
+          })}
+        </CardGrid>
       )}
     </div>
   )

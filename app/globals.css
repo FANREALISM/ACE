@@ -776,3 +776,274 @@ html[data-bkg='normal'] .bkg-normal {
 :where(:root:not([data-theme='light'])) .text-cyan-400\/60 { color: rgb(34 211 238 / 0.78); }
 :where(:root:not([data-theme='light'])) .text-cyan-400\/70 { color: rgb(34 211 238 / 0.82); }
 :where(:root:not([data-theme='light'])) .placeholder\:text-white\/30::placeholder { color: rgb(255 255 255 / 0.52); }
+
+
+/* ==========================================================================
+   UI THEME: GAME HUD  (<html data-ui="game">)
+   --------------------------------------------------------------------------
+   Seluruh blok ini INERT di mode Terminal: semua selector diawali
+   [data-ui='game'], jadi Terminal tidak berubah satu piksel pun.
+   Admin (/secret-cmd) tidak memakai .glass-card / hud-*, jadi tidak ikut.
+
+   Utilitas (dipakai di className, tanpa ternary):
+     .glass-card   otomatis jadi panel HUD (sudut terpotong + border neon
+                   asimetris + kode & barcode di sudut + hover scanline/glitch)
+     .hud-chip     chip/tombol kecil: potongan sudut + aksen kiri tebal
+     .hud-cut      potongan sudut besar untuk wadah lain (tanpa dekorasi)
+     .hud-title    judul: uppercase + glitch saat parent .glass-card di-hover
+   Di Tailwind: `game:rounded-none`, `terminal:…` (lihat tailwind.config.ts).
+   ========================================================================== */
+:root {
+  --hud-a: #22d3ee; /* cyan  — tepi atas/kiri   */
+  --hud-b: #f43f5e; /* rose  — tepi bawah/kanan */
+  --hud-cut: 18px;
+  --hud-cut-sm: 8px;
+}
+[data-theme='light'] {
+  --hud-a: #0e7490;
+  --hud-b: #be123c;
+}
+
+[data-ui='game'] body { counter-reset: hud-card; }
+
+/* --- Panel utama ------------------------------------------------------- */
+[data-ui='game'] .glass-card {
+  position: relative;
+  isolation: isolate; /* ::before z-index:-1 tetap di dalam kartu */
+  counter-increment: hud-card;
+  border: 0;
+  border-radius: 0;
+  /* Latar = warna TEPI (gradien cyan→rose). Isi opaque digambar ::before
+     yang lebih kecil 1px (3px di kiri) → sisa tepi tampak sebagai border
+     asimetris, termasuk di diagonal potongan. */
+  background: linear-gradient(135deg, var(--hud-a) 0%, color-mix(in srgb, var(--hud-a) 25%, transparent) 45%, var(--hud-b) 100%);
+  clip-path: polygon(
+    var(--hud-cut) 0, 100% 0, 100% calc(100% - var(--hud-cut)),
+    calc(100% - var(--hud-cut)) 100%, 0 100%, 0 var(--hud-cut)
+  );
+  transition: filter 0.2s;
+}
+[data-ui='game'] .glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 1px 1px 1px 3px;
+  z-index: -1;
+  background: var(--panel-bg);
+  clip-path: polygon(
+    calc(var(--hud-cut) - 2px) 0, 100% 0, 100% calc(100% - var(--hud-cut) + 2px),
+    calc(100% - var(--hud-cut) + 2px) 100%, 0 100%, 0 calc(var(--hud-cut) - 1px)
+  );
+}
+/* Dekorasi: barcode (kanan atas) + kode acak (kanan bawah) + scanline. */
+[data-ui='game'] .glass-card::after {
+  content: 'ID_' counter(hud-card, upper-hexadecimal) ' // 0x' counter(hud-card, decimal-leading-zero) 'F';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 calc(var(--hud-cut) + 4px) 5px 0;
+  font: 500 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+  color: var(--hud-a);
+  opacity: 0.55;
+  background-image:
+    repeating-linear-gradient(90deg, var(--hud-a) 0 1px, transparent 1px 3px, var(--hud-a) 3px 5px, transparent 5px 6px, var(--hud-a) 6px 7px, transparent 7px 10px),
+    linear-gradient(180deg, transparent 0%, transparent 100%);
+  background-repeat: no-repeat;
+  background-size: 44px 7px, 100% 100%;
+  background-position: calc(100% - 10px) 9px, 0 0;
+}
+/* Dekorasi (::after) berada di z-index:-1 → konten kartu yang tidak
+   dipositionkan otomatis tampil di atasnya, TANPA memaksa position pada
+   anak (itu akan merusak elemen `absolute` seperti badge Featured). */
+
+/* Hover: scanline menyapu + tepi menyala + judul glitch. */
+/* clip-path memotong SEMUA yang digambar di luar bentuknya — termasuk
+   filter: drop-shadow dan outline. Jadi cahaya hover & cincin fokus
+   digambar DI DALAM bentuk (inset shadow pada ::before). */
+[data-ui='game'] .glass-card:hover::before {
+  box-shadow: inset 0 0 22px var(--accent-glow-hover);
+}
+[data-ui='game'] .glass-card:has(:focus-visible)::before {
+  box-shadow: inset 0 0 0 3px var(--hud-a), inset 0 0 18px var(--accent-glow-hover);
+}
+[data-ui='game'] .glass-card:hover::after {
+  opacity: 1;
+  background-image:
+    repeating-linear-gradient(90deg, var(--hud-a) 0 1px, transparent 1px 3px, var(--hud-a) 3px 5px, transparent 5px 6px, var(--hud-a) 6px 7px, transparent 7px 10px),
+    repeating-linear-gradient(180deg, color-mix(in srgb, var(--hud-a) 14%, transparent) 0 1px, transparent 1px 3px);
+  animation: hud-scan 1.1s linear infinite;
+}
+@keyframes hud-scan {
+  from { background-position: calc(100% - 10px) 9px, 0 0; }
+  to   { background-position: calc(100% - 10px) 9px, 0 18px; }
+}
+[data-ui='game'] .hud-title {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+[data-ui='game'] .glass-card:hover .hud-title {
+  animation: hud-glitch 0.38s steps(2, end) 1;
+}
+@keyframes hud-glitch {
+  0%   { text-shadow: 2px 0 var(--hud-b), -2px 0 var(--hud-a); transform: translateX(-1px); }
+  25%  { text-shadow: -2px 0 var(--hud-b), 2px 0 var(--hud-a); transform: translateX(2px); }
+  50%  { text-shadow: 1px 0 var(--hud-b), -1px 0 var(--hud-a); transform: translateX(-2px); }
+  75%  { text-shadow: -1px 0 var(--hud-b), 1px 0 var(--hud-a); transform: translateX(1px); }
+  100% { text-shadow: none; transform: none; }
+}
+
+/* --- Chip / tombol kecil ---------------------------------------------- */
+[data-ui='game'] .hud-chip {
+  border-radius: 0;
+  border-width: 1px 1px 1px 3px;
+  border-color: color-mix(in srgb, var(--hud-a) 45%, transparent);
+  border-left-color: var(--hud-a);
+  clip-path: polygon(var(--hud-cut-sm) 0, 100% 0, 100% calc(100% - var(--hud-cut-sm)), calc(100% - var(--hud-cut-sm)) 100%, 0 100%, 0 var(--hud-cut-sm));
+  text-transform: uppercase;
+  transition: background-color 0.15s, color 0.15s, transform 0.15s;
+}
+[data-ui='game'] .hud-chip:hover { transform: translateX(2px); }
+[data-ui='game'] .hud-chip:active { transform: translateX(0) scale(0.97); }
+
+.hud-cut { /* wadah lain, tanpa dekorasi */ }
+[data-ui='game'] .hud-cut {
+  border-radius: 0;
+  clip-path: polygon(var(--hud-cut) 0, 100% 0, 100% calc(100% - var(--hud-cut)), calc(100% - var(--hud-cut)) 100%, 0 100%, 0 var(--hud-cut));
+}
+
+/* Fokus tetap terlihat: clip-path memotong outline di sudut, jadi pakai
+   outline-offset negatif pada elemen yang terpotong. */
+[data-ui='game'] .hud-chip:focus-visible { outline-offset: -3px; }
+
+/* --- Kilatan saat berganti mode --------------------------------------- */
+html.ui-switching::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--hud-a) 35%, transparent) 0 2px, transparent 2px 6px);
+  animation: hud-flash 0.5s ease-out forwards;
+}
+@keyframes hud-flash {
+  0% { opacity: 0.9; transform: translateY(-4%); }
+  100% { opacity: 0; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ui='game'] .glass-card:hover::after,
+  [data-ui='game'] .glass-card:hover .hud-title,
+  html.ui-switching::after { animation: none; }
+  [data-ui='game'] .hud-chip:hover { transform: none; }
+}
+
+
+/* ==========================================================================
+   TUTORIAL / ONBOARDING  (components/ui/TutorialOverlay.tsx)
+   Terminal vs Game HUD dibedakan lewat <html data-ui>, bukan JS.
+   ========================================================================== */
+:root { --tut-accent: #67e8f9; }
+[data-ui='game'] { --tut-accent: #fbbf24; }
+
+.tut-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.74);
+}
+
+/* Spotlight: kotak berlubang. Spread box-shadow raksasa = peredup layar;
+   elemen ini statis (hanya top/left/width/height berubah per langkah). */
+.tut-spot {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  border-radius: 6px;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.74);
+  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
+}
+.tut-spot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  /* Terminal: sepasang kurung siku  [ ... ] */
+  --c: var(--tut-accent);
+  background:
+    linear-gradient(var(--c), var(--c)) left top / 2px 100% no-repeat,
+    linear-gradient(var(--c), var(--c)) left top / 10px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) left bottom / 10px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) right top / 2px 100% no-repeat,
+    linear-gradient(var(--c), var(--c)) right top / 10px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) right bottom / 10px 2px no-repeat;
+}
+/* Game HUD: empat sudut penanda (reticle) + denyut. */
+[data-ui='game'] .tut-spot { border-radius: 0; }
+[data-ui='game'] .tut-spot::after {
+  background:
+    linear-gradient(var(--c), var(--c)) left top / 18px 3px no-repeat,
+    linear-gradient(var(--c), var(--c)) left top / 3px 18px no-repeat,
+    linear-gradient(var(--c), var(--c)) right top / 18px 3px no-repeat,
+    linear-gradient(var(--c), var(--c)) right top / 3px 18px no-repeat,
+    linear-gradient(var(--c), var(--c)) left bottom / 18px 3px no-repeat,
+    linear-gradient(var(--c), var(--c)) left bottom / 3px 18px no-repeat,
+    linear-gradient(var(--c), var(--c)) right bottom / 18px 3px no-repeat,
+    linear-gradient(var(--c), var(--c)) right bottom / 3px 18px no-repeat;
+  animation: tut-pulse 1.4s ease-in-out infinite;
+}
+@keyframes tut-pulse { 50% { opacity: 0.45; } }
+
+.tut-dialog {
+  transition: top 0.25s ease, left 0.25s ease;
+  animation: tut-in 0.22s ease-out;
+}
+@keyframes tut-in { from { opacity: 0; transform: scale(0.97); } }
+
+.tut-step-in { animation: tut-step 0.2s ease-out; }
+@keyframes tut-step { from { opacity: 0; transform: translateY(4px); } }
+[data-ui='game'] .tut-step-in { animation: tut-step-game 0.28s steps(4, end); }
+@keyframes tut-step-game {
+  0% { opacity: 0; transform: translateX(-6px); }
+  50% { opacity: 1; transform: translateX(3px); }
+  100% { opacity: 1; transform: none; }
+}
+
+.tut-caret { animation: tut-blink 1s steps(2, start) infinite; }
+@keyframes tut-blink { to { visibility: hidden; } }
+
+.tut-ai-dot {
+  width: 8px; height: 8px; background: var(--tut-accent);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  animation: tut-pulse 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tut-spot { transition: none; }
+  .tut-spot::after, .tut-dialog, .tut-step-in, .tut-caret, .tut-ai-dot { animation: none !important; }
+}
+
+/* .glass-card (Game HUD) memaksa position:relative; dialog harus tetap fixed. */
+[data-ui='game'] .tut-dialog { position: fixed; }
+
+/* Tombol utama tutorial. Tema terang memetakan bg-cyan-400 ke merah, jadi
+   warnanya didefinisikan sendiri agar kontras teks terjamin di kedua tema. */
+.tut-primary { background: var(--tut-accent); border-color: var(--tut-accent); color: #000; }
+.tut-primary:hover { filter: brightness(1.12); }
+[data-theme='light']:not([data-ui='game']) .tut-primary { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+
+/* Mobile: tombol UI/BKG melayang berbentuk bulat penuh — juga di Game HUD
+   (yang biasanya memotong sudut). Dari sm ke atas, bentuk HUD kembali. */
+@media (max-width: 639px) {
+  [data-ui='game'] .hud-chip.hud-round-sm {
+    clip-path: none;
+    border-radius: 9999px;
+    border-width: 1px;
+    border-color: color-mix(in srgb, var(--hud-a) 55%, transparent);
+  }
+  [data-ui='game'] .hud-chip.hud-round-sm:hover { transform: none; }
+}

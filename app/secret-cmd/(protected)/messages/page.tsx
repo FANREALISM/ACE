@@ -3,7 +3,17 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { ContactMessage } from '@/lib/types'
-import { Trash2, Mail, MailOpen } from 'lucide-react'
+import { Mail, MailOpen } from 'lucide-react'
+import {
+  Alert,
+  Btn,
+  ConfirmDeleteButton,
+  EmptyState,
+  IconBtn,
+  LoadingState,
+  PageHeader,
+  StatusTag,
+} from '@/components/admin/AdminUI'
 
 /**
  * Inbox pesan dari contact form publik (components/sections/ContactForm.tsx).
@@ -51,7 +61,6 @@ export default function MessagesAdminPage() {
   }
 
   async function handleDelete(messageId: string) {
-    if (!confirm('Yakin hapus pesan ini?')) return
     setErrorMessage(null)
     const { error: deleteError } = await supabase
       .from('contact_messages')
@@ -70,96 +79,78 @@ export default function MessagesAdminPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold">Pesan Masuk</h1>
-        {unreadMessageCount > 0 && (
-          <span className="text-xs font-mono px-2 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300">
-            {unreadMessageCount} belum dibaca
-          </span>
-        )}
-      </div>
-
-      <p className="text-xs text-white/30 mb-6">
-        Pesan dari contact form publik. Endpoint insert-nya terbuka untuk
-        siapa saja (itu memang tujuannya — form publik) dengan honeypot
-        dasar untuk bot sederhana. Kalau mulai kebanjiran spam, pertimbangkan
-        nambah CAPTCHA (mis. Cloudflare Turnstile, gratis) — belum
-        diimplementasikan di sini.
-      </p>
+      <PageHeader
+        code="INBOX"
+        title="Pesan Masuk"
+        description="Pesan dari form kontak publik. Balas lewat email (klik alamatnya). Form dilindungi honeypot sederhana; kalau spam membanjir, pertimbangkan CAPTCHA seperti Cloudflare Turnstile."
+        actions={
+          unreadMessageCount > 0 && (
+            <StatusTag dot pulse>
+              {unreadMessageCount} BELUM_DIBACA
+            </StatusTag>
+          )
+        }
+      />
 
       {errorMessage && (
-        <p className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3">
-          {errorMessage}
-        </p>
+        <div className="mb-6">
+          <Alert>{errorMessage}</Alert>
+        </div>
       )}
 
       {isLoading ? (
-        <p className="text-white/40">Memuat...</p>
+        <LoadingState />
       ) : messages.length === 0 ? (
-        <p className="text-white/40">Belum ada pesan masuk.</p>
+        <EmptyState code="INBOX_EMPTY">Belum ada pesan masuk.</EmptyState>
       ) : (
-        <div className="space-y-3">
+        <ul className="space-y-3">
           {messages.map((message) => (
-            <div
+            <li
               key={message.id}
-              className={`glass-card p-4 ${
-                !message.is_read ? 'border-cyan-400/30' : ''
-              }`}
+              data-unread={!message.is_read ? 'true' : undefined}
+              className="adm-card p-4"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-medium">{message.name}</p>
-                    {!message.is_read && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                    )}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                    <h2 className="font-medium text-adm-text">{message.name}</h2>
+                    <StatusTag tone={message.is_read ? 'muted' : 'cyan'} dot={!message.is_read}>
+                      {message.is_read ? 'READ' : 'NEW'}
+                    </StatusTag>
                   </div>
                   <a
                     href={`mailto:${message.email}`}
-                    className="text-sm text-cyan-400 hover:underline"
+                    className="adm-mono break-all text-xs text-adm-cyan underline-offset-4 hover:underline"
                   >
                     {message.email}
                   </a>
-                  <p className="text-sm text-white/60 mt-2 whitespace-pre-line">
+                  <p className="mt-3 whitespace-pre-line break-words text-sm leading-relaxed text-adm-text/90">
                     {message.message}
                   </p>
-                  <p className="text-xs text-white/30 mt-2 font-mono">
+                  <p className="adm-mono mt-3 text-[0.68rem] tracking-wider text-adm-dim">
                     {new Date(message.created_at).toLocaleString()}
                   </p>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <button
+                <div className="flex shrink-0 gap-1.5 self-end sm:self-start">
+                  <IconBtn
+                    label={message.is_read ? 'Tandai belum dibaca' : 'Tandai sudah dibaca'}
                     onClick={() => toggleReadStatus(message)}
-                    aria-label={
-                      message.is_read
-                        ? 'Tandai belum dibaca'
-                        : 'Tandai sudah dibaca'
-                    }
-                    title={
-                      message.is_read
-                        ? 'Tandai belum dibaca'
-                        : 'Tandai sudah dibaca'
-                    }
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"
                   >
                     {message.is_read ? (
-                      <Mail size={16} />
+                      <Mail size={15} aria-hidden="true" />
                     ) : (
-                      <MailOpen size={16} />
+                      <MailOpen size={15} aria-hidden="true" />
                     )}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(message.id)}
-                    aria-label="Hapus pesan ini"
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-red-400"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  </IconBtn>
+                  <ConfirmDeleteButton
+                    itemName={`pesan dari ${message.name}`}
+                    onConfirm={() => handleDelete(message.id)}
+                  />
                 </div>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   )

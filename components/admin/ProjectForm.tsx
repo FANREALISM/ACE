@@ -5,6 +5,7 @@ import type { Project } from '@/lib/types'
 import ImageUpload from './ImageUpload'
 import { translateToEnglish } from '@/lib/translate'
 import { Languages } from 'lucide-react'
+import { Btn } from '@/components/admin/AdminUI'
 
 interface ProjectFormProps {
   initial?: Partial<Project>
@@ -102,54 +103,58 @@ export default function ProjectForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="adm-panel space-y-5 p-5 sm:p-6">
+      <h2 className="adm-panel-title">
+        <span aria-hidden="true">▸</span>[ {initial ? 'EDIT_DATA' : 'NEW_ENTRY'} ]
+      </h2>
       <div>
-        <label className="block text-sm text-white/50 mb-1">
+        <label htmlFor="projectform-1" className="adm-label">
           Judul Proyek
         </label>
-        <input
+        <input id="projectform-1"
           value={title}
           onChange={(changeEvent) => setTitle(changeEvent.target.value)}
           required
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
       <div>
-        <label className="block text-sm text-white/50 mb-1">Deskripsi</label>
-        <textarea
+        <label htmlFor="projectform-2" className="adm-label">Deskripsi</label>
+        <textarea id="projectform-2"
           value={description}
           onChange={(changeEvent) => setDescription(changeEvent.target.value)}
           required
           rows={3}
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm text-white/50">
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+          <label htmlFor="projectform-en" className="adm-label !mb-0">
             Deskripsi (English) — opsional
           </label>
-          <button
-            type="button"
+          <Btn
+            variant="violet"
+            size="sm"
             onClick={handleAutoTranslate}
             disabled={isTranslating}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-400/30 text-purple-300 hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+            icon={<Languages size={13} aria-hidden="true" />}
           >
-            <Languages size={13} />
-            {isTranslating ? 'Menerjemahkan...' : 'Auto-translate to EN'}
-          </button>
+            {isTranslating ? 'MENERJEMAHKAN...' : 'AUTO_TRANSLATE_EN'}
+          </Btn>
         </div>
         <textarea
+          id="projectform-en"
           value={descriptionEn}
           onChange={(changeEvent) => setDescriptionEn(changeEvent.target.value)}
           rows={3}
           placeholder="Kosong = fallback ke deskripsi Indonesia saat visitor pilih EN"
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-purple-400"
+          className="adm-input" data-accent="violet"
         />
         {translateErrorMessage && (
-          <p className="text-xs text-red-400 mt-1">{translateErrorMessage}</p>
+          <p className="adm-hint !text-adm-red">{translateErrorMessage}</p>
         )}
       </div>
 
@@ -161,145 +166,133 @@ export default function ProjectForm({
           label="Upload Gambar Proyek"
         />
         <div>
-          <label className="block text-sm text-white/50 mb-1">
+          <label htmlFor="projectform-3" className="adm-label">
             Atau URL Gambar (dari internet)
           </label>
-          <input
+          <input id="projectform-3"
             value={imageUrl}
             onChange={(changeEvent) => setImageUrl(changeEvent.target.value)}
             placeholder="https://..."
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+            className="adm-input"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm text-white/50 mb-1">
+        <label htmlFor="projectform-4" className="adm-label">
           Teknologi (pisahkan dengan koma)
         </label>
-        <input
+        <input id="projectform-4"
           value={techStack}
           onChange={(changeEvent) => setTechStack(changeEvent.target.value)}
           placeholder="React, Tailwind, Supabase"
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
-      <label className="flex items-center gap-3 px-4 py-3 rounded-lg bg-black/40 border border-white/10 cursor-pointer">
+      <label className="adm-input flex cursor-pointer items-center gap-3">
         <input
           type="checkbox"
           checked={isFeatured}
           onChange={(changeEvent) => setIsFeatured(changeEvent.target.checked)}
-          className="w-4 h-4 accent-cyan-400"
+          className="adm-check"
         />
-        <span className="text-sm text-white/70">
+        <span className="text-sm text-adm-text">
           Tandai sebagai proyek unggulan (tampil lebih dulu + badge di
           halaman public)
         </span>
       </label>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
-          <label className="block text-sm text-white/50 mb-1">
+          <label htmlFor="projectform-5" className="adm-label">
             Live Demo URL
           </label>
-          <input
+          <input id="projectform-5"
             value={projectUrl}
             onChange={(changeEvent) => setProjectUrl(changeEvent.target.value)}
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+            className="adm-input"
           />
         </div>
         <div>
-          <label className="block text-sm text-white/50 mb-1">
+          <label htmlFor="projectform-6" className="adm-label">
             GitHub URL
           </label>
-          <input
+          <input id="projectform-6"
             value={githubUrl}
             onChange={(changeEvent) => setGithubUrl(changeEvent.target.value)}
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+            className="adm-input"
           />
         </div>
       </div>
 
-      <details className="rounded-lg border border-white/10 overflow-hidden">
-        <summary className="px-4 py-3 bg-black/40 cursor-pointer text-sm text-white/70 hover:text-white transition-colors select-none">
+      <details className="adm-details">
+        <summary className="adm-summary">
           Case Study (opsional) — untuk 1-2 proyek unggulan yang mau
           ditulis lebih dalam
         </summary>
-        <div className="p-4 space-y-4 border-t border-white/10">
-          <p className="text-xs text-white/40">
+        <div className="space-y-5 border-t border-adm-line/15 p-4">
+          <p className="adm-hint !mt-0">
             Isi minimal satu field di bawah untuk memunculkan tombol
             "Read Case Study" di kartu proyek, membuka halaman tersendiri
-            di <code className="text-white/60">/projects/[id]</code>.
+            di <code className="adm-mono text-adm-cyan">/projects/[id]</code>.
             Kosongkan semua kalau proyek ini tidak perlu case study.
           </p>
           <div>
-            <label className="block text-sm text-white/50 mb-1">
+            <label htmlFor="projectform-7" className="adm-label">
               The Problem
             </label>
-            <textarea
+            <textarea id="projectform-7"
               value={caseStudyProblem}
               onChange={(changeEvent) => setCaseStudyProblem(changeEvent.target.value)}
               rows={3}
               placeholder="Masalah apa yang proyek ini selesaikan? Kenapa itu penting?"
-              className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+              className="adm-input"
             />
           </div>
           <div>
-            <label className="block text-sm text-white/50 mb-1">
+            <label htmlFor="projectform-8" className="adm-label">
               The Approach
             </label>
-            <textarea
+            <textarea id="projectform-8"
               value={caseStudyApproach}
               onChange={(changeEvent) => setCaseStudyApproach(changeEvent.target.value)}
               rows={3}
               placeholder="Bagaimana kamu mendekati masalahnya? Keputusan teknis apa yang diambil?"
-              className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+              className="adm-input"
             />
           </div>
           <div>
-            <label className="block text-sm text-white/50 mb-1">
+            <label htmlFor="projectform-9" className="adm-label">
               The Tradeoff
             </label>
-            <textarea
+            <textarea id="projectform-9"
               value={caseStudyTradeoff}
               onChange={(changeEvent) => setCaseStudyTradeoff(changeEvent.target.value)}
               rows={3}
               placeholder="Tradeoff nyata yang kamu ambil — bukan cuma 'semua berjalan lancar'. Apa yang dikorbankan?"
-              className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+              className="adm-input"
             />
           </div>
           <div>
-            <label className="block text-sm text-white/50 mb-1">
+            <label htmlFor="projectform-10" className="adm-label">
               What I'd Do Differently
             </label>
-            <textarea
+            <textarea id="projectform-10"
               value={caseStudyLearnings}
               onChange={(changeEvent) => setCaseStudyLearnings(changeEvent.target.value)}
               rows={3}
               placeholder="Dengan yang kamu tahu sekarang, apa yang akan diubah?"
-              className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+              className="adm-input"
             />
           </div>
         </div>
       </details>
 
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="px-6 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
-        >
-          {isSaving ? 'Menyimpan...' : 'Simpan'}
-        </button>
+      <div className="flex flex-wrap gap-3 border-t border-adm-line/10 pt-5">
+        <Btn type="submit" disabled={isSaving}>{isSaving ? 'MENYIMPAN...' : 'SIMPAN'}</Btn>
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-6 py-2 rounded-lg border border-white/10 text-white/60 hover:text-white transition-colors"
-          >
-            Batal
-          </button>
+          <Btn variant="ghost" onClick={onCancel}>BATAL</Btn>
         )}
       </div>
     </form>

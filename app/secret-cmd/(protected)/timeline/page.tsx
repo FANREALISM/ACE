@@ -4,9 +4,20 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import TimelineForm from '@/components/admin/TimelineForm'
 import type { TimelineEntry } from '@/lib/types'
-import { Pencil, Trash2, Plus } from 'lucide-react'
+import { Pencil, Plus } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import {
+  Alert,
+  Btn,
+  CardGrid,
+  ConfirmDeleteButton,
+  EmptyState,
+  IconBtn,
+  LoadingState,
+  PageHeader,
+  StatusTag,
+} from '@/components/admin/AdminUI'
 
 function resolveIcon(iconName: string): LucideIcon {
   return (
@@ -97,7 +108,6 @@ export default function TimelineAdminPage() {
   }
 
   async function handleDelete(entryId: string) {
-    if (!confirm('Yakin hapus entri timeline ini?')) return
     setErrorMessage(null)
     const { error: deleteError } = await supabase
       .from('timeline_entries')
@@ -110,35 +120,32 @@ export default function TimelineAdminPage() {
     loadEntries()
   }
 
+  const isEditorOpen = isFormVisible || editingEntry !== null
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Kelola Timeline Karir & Pendidikan</h1>
-        {!isFormVisible && !editingEntry && (
-          <button
-            onClick={() => setIsFormVisible(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
-          >
-            <Plus size={16} /> Tambah Entri
-          </button>
-        )}
-      </div>
+      <PageHeader
+        code="TIMELINE_DB"
+        title="Kelola Timeline Karir & Pendidikan"
+        description="Urutan tampil otomatis dari tanggal mulai (terbaru dulu) — ubah tanggal untuk memindahkan entri."
+        actions={
+          !isEditorOpen && (
+            <Btn icon={<Plus size={15} aria-hidden="true" />} onClick={() => setIsFormVisible(true)}>
+              TAMBAH_ENTRI
+            </Btn>
+          )
+        }
+      />
 
       {errorMessage && (
-        <p
-          role="alert"
-          className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3"
-        >
-          {errorMessage}
-        </p>
+        <div className="mb-6">
+          <Alert>{errorMessage}</Alert>
+        </div>
       )}
 
       {isFormVisible && (
         <div className="mb-8">
-          <TimelineForm
-            onSubmit={handleCreate}
-            onCancel={() => setIsFormVisible(false)}
-          />
+          <TimelineForm onSubmit={handleCreate} onCancel={() => setIsFormVisible(false)} />
         </div>
       )}
 
@@ -157,74 +164,80 @@ export default function TimelineAdminPage() {
       )}
 
       {isLoading ? (
-        <p className="text-white/40">Memuat...</p>
+        <LoadingState />
+      ) : entries.length === 0 && !errorMessage ? (
+        <EmptyState code="NO_ENTRIES">Belum ada entri timeline.</EmptyState>
       ) : (
-        <div className="space-y-3">
+        <CardGrid>
           {entries.map((entry) => {
             const EntryIcon = resolveIcon(entry.icon)
             const isCareer = entry.type === 'career'
             return (
-              <div key={entry.id} className="glass-card p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div
-                      className={`flex items-center justify-center w-8 h-8 rounded-lg border shrink-0 ${
-                        isCareer
-                          ? 'bg-cyan-500/10 border-cyan-400/30 text-cyan-300'
-                          : 'bg-purple-500/10 border-purple-400/30 text-purple-300'
+              <li
+                key={entry.id}
+                data-accent={isCareer ? undefined : 'violet'}
+                className="adm-card flex flex-col gap-3 p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`adm-thumb h-10 w-10 !border-solid ${
+                      isCareer ? '!text-adm-cyan' : '!text-adm-violet'
+                    }`}
+                  >
+                    <EntryIcon size={17} aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`adm-mono text-[0.65rem] uppercase tracking-[0.12em] ${
+                        isCareer ? 'text-adm-cyan' : 'text-adm-violet'
                       }`}
                     >
-                      <EntryIcon size={14} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`font-mono text-xs uppercase mb-1 ${
-                          isCareer ? 'text-cyan-300' : 'text-purple-300'
-                        }`}
-                      >
-                        [ {isCareer ? 'Karir' : 'Pendidikan'} ] ·{' '}
-                        {formatMonthYear(entry.start_date)} —{' '}
-                        {entry.is_current
-                          ? 'Sekarang'
-                          : entry.end_date
-                            ? formatMonthYear(entry.end_date)
-                            : '?'}
-                      </p>
-                      <p className="text-sm text-white/80 truncate">
-                        {entry.title}
-                      </p>
-                      <p className="text-sm text-white/50 truncate">
-                        {entry.organization}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button
-                      onClick={() => {
-                        setEditingEntry(entry)
-                        setIsFormVisible(false)
-                      }}
-                      aria-label={`Edit entri ${entry.title}`}
-                      className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(entry.id)}
-                      aria-label={`Hapus entri ${entry.title}`}
-                      className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-red-400"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                      [ {isCareer ? 'Karir' : 'Pendidikan'} ]
+                    </p>
+                    <h2 className="mt-0.5 text-sm font-medium leading-snug text-adm-text">
+                      {entry.title}
+                    </h2>
+                    <p className="truncate text-sm text-adm-muted">{entry.organization}</p>
                   </div>
                 </div>
-              </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <StatusTag tone="muted">
+                    {formatMonthYear(entry.start_date)} —{' '}
+                    {entry.is_current
+                      ? 'Sekarang'
+                      : entry.end_date
+                        ? formatMonthYear(entry.end_date)
+                        : '?'}
+                  </StatusTag>
+                  {entry.is_current && (
+                    <StatusTag tone="green" dot pulse>
+                      AKTIF
+                    </StatusTag>
+                  )}
+                </div>
+
+                <div className="mt-auto flex justify-end gap-2 border-t border-adm-line/10 pt-3">
+                  <IconBtn
+                    label={`Edit entri ${entry.title}`}
+                    onClick={() => {
+                      setEditingEntry(entry)
+                      setIsFormVisible(false)
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                  >
+                    <Pencil size={15} aria-hidden="true" />
+                    <span className="max-sm:sr-only">Edit</span>
+                  </IconBtn>
+                  <ConfirmDeleteButton
+                    itemName={`entri ${entry.title}`}
+                    onConfirm={() => handleDelete(entry.id)}
+                  />
+                </div>
+              </li>
             )
           })}
-          {entries.length === 0 && !errorMessage && (
-            <p className="text-white/40">Belum ada entri timeline.</p>
-          )}
-        </div>
+        </CardGrid>
       )}
     </div>
   )

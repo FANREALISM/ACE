@@ -2,9 +2,10 @@
 
 import { usePathname } from 'next/navigation'
 import BackgroundSwitcher from './BackgroundSwitcher'
+import UISwitcher from './UISwitcher'
 
 /**
- * Tombol `[ BKG: … ]` yang melayang di pojok kanan bawah dan terlihat di
+ * Tombol `[ UI: … ]` dan `[ BKG: … ]` yang melayang di pojok kanan bawah dan terlihat di
  * semua halaman publik (Hero, section, halaman proyek). Dipasang SEKALI di
  * app/layout.tsx — tidak perlu ditaruh di tiap halaman.
  *
@@ -22,13 +23,15 @@ export default function FloatingBackgroundSwitcher() {
     // <aside> = landmark "complementary": konten popover (daftar pilihan) tidak
     // lagi berada di luar landmark mana pun (aturan axe "region").
     <aside
-      aria-label="Pengaturan latar belakang"
-      className="fixed z-40"
+      aria-label="Pengaturan tampilan"
+      data-tutorial="display-controls"
+      className="fixed z-40 flex flex-wrap items-end justify-end gap-2"
       style={{
         right: 'max(1rem, env(safe-area-inset-right))',
         bottom: 'max(1rem, env(safe-area-inset-bottom))',
       }}
     >
+      <UISwitcher />
       <BackgroundSwitcher variant="floating" placement="up" align="right" />
     </aside>
   )

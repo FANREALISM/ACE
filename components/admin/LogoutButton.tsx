@@ -20,9 +20,11 @@ export default function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="flex items-center gap-2 text-sm text-white/50 hover:text-red-400 transition-colors"
+      type="button"
+      data-tone="danger"
+      className="adm-iconbtn"
     >
-      <LogOut size={16} />
+      <LogOut size={14} aria-hidden="true" />
       Logout
     </button>
   )

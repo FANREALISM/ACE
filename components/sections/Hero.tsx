@@ -207,6 +207,7 @@ export default function Hero({ profile }: { profile: Profile | null }) {
         >
           {profile && (
             <div
+              data-tutorial="hero-status"
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono uppercase tracking-wide ${
                 profile.is_available
                   ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300'
@@ -322,7 +323,7 @@ export default function Hero({ profile }: { profile: Profile | null }) {
         </motion.div>
 
         {/* Kolom kanan: menu navigasi vertikal */}
-        <nav aria-label="Main menu" className="flex flex-col">
+        <nav aria-label="Main menu" data-tutorial="hero-menu" className="flex flex-col">
           {menuItems.map((menuItem, menuItemIndex) => (
             <MenuButton
               key={menuItem.key}

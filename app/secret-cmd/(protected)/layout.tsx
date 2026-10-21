@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import LogoutButton from '@/components/admin/LogoutButton'
-import Link from 'next/link'
+import AdminShell from '@/components/admin/AdminShell'
 
 /**
  * Layout yang membungkus SEMUA halaman admin kecuali login — gerbang
@@ -46,40 +45,27 @@ export default async function ProtectedLayout({
     redirect('/secret-cmd/login')
   }
 
+  // Jumlah pesan belum dibaca untuk lencana di sidebar. Best-effort:
+  // gagal / lambat → 0, tidak boleh menghalangi halaman admin terbuka.
+  let unreadCount = 0
+  try {
+    const unreadResult = await Promise.race([
+      supabase
+        .from('contact_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_read', false),
+      new Promise<never>((_resolveNeverCalled, rejectWithTimeoutError) =>
+        setTimeout(() => rejectWithTimeoutError(new Error('unread timeout')), 2500)
+      ),
+    ])
+    unreadCount = unreadResult.count ?? 0
+  } catch {
+    // Abaikan — lencana saja yang hilang.
+  }
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="glass-nav sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <nav className="flex gap-6 text-sm">
-            <Link href="/secret-cmd" className="hover:text-cyan-400">
-              Dashboard
-            </Link>
-            <Link href="/secret-cmd/about" className="hover:text-cyan-400">
-              About
-            </Link>
-            <Link href="/secret-cmd/timeline" className="hover:text-cyan-400">
-              Timeline
-            </Link>
-            <Link href="/secret-cmd/skills" className="hover:text-cyan-400">
-              Skills
-            </Link>
-            <Link href="/secret-cmd/projects" className="hover:text-cyan-400">
-              Projects
-            </Link>
-            <Link
-              href="/secret-cmd/certificates"
-              className="hover:text-cyan-400"
-            >
-              Certificates
-            </Link>
-            <Link href="/secret-cmd/messages" className="hover:text-cyan-400">
-              Messages
-            </Link>
-          </nav>
-          <LogoutButton />
-        </div>
-      </header>
-      <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>
-    </div>
+    <AdminShell userEmail={currentUser.email ?? 'admin'} unreadCount={unreadCount}>
+      {children}
+    </AdminShell>
   )
 }

@@ -17,6 +17,7 @@ import type { Dictionary } from '@/lib/i18n/types'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import TutorialReplayButton from '@/components/ui/TutorialReplayButton'
 
 /** Peta key menu (gaya terminal, dipakai di Hero) → label navbar bahasa
  *  biasa. Item yang tidak terdaftar di sini jatuh ke label menu aslinya. */
@@ -252,6 +253,7 @@ export default function MorphingNavbar({
           </ul>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            <TutorialReplayButton variant="navbar" />
             <button
               type="button"
               onClick={openCommandPalette}

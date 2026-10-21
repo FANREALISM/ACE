@@ -4,9 +4,20 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import SkillForm from '@/components/admin/SkillForm'
 import type { Skill } from '@/lib/types'
-import { Pencil, Trash2, Plus } from 'lucide-react'
+import { Pencil, Plus } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import {
+  Alert,
+  Btn,
+  CardGrid,
+  ConfirmDeleteButton,
+  EmptyState,
+  IconBtn,
+  LoadingState,
+  PageHeader,
+  StatusTag,
+} from '@/components/admin/AdminUI'
 
 function resolveIcon(iconName: string): LucideIcon {
   return (
@@ -83,7 +94,6 @@ export default function SkillsAdminPage() {
   }
 
   async function handleDelete(skillId: string) {
-    if (!confirm('Yakin hapus skill ini?')) return
     setErrorMessage(null)
     const { error: deleteError } = await supabase
       .from('skills')
@@ -96,38 +106,39 @@ export default function SkillsAdminPage() {
     loadSkills()
   }
 
+  const isEditorOpen = isFormVisible || editingSkill !== null
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Kelola Tech Stack / Skills</h1>
-        {!isFormVisible && !editingSkill && (
-          <button
-            onClick={() => setIsFormVisible(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
-          >
-            <Plus size={16} /> Tambah Skill
-          </button>
-        )}
-      </div>
+      <PageHeader
+        code="SKILL_TREE"
+        title="Kelola Tech Stack / Skills"
+        description="Ikon dan nama skill yang tampil di marquee halaman publik."
+        actions={
+          !isEditorOpen && (
+            <Btn icon={<Plus size={15} aria-hidden="true" />} onClick={() => setIsFormVisible(true)}>
+              TAMBAH_SKILL
+            </Btn>
+          )
+        }
+      />
 
       {errorMessage && (
-        <p className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3">
-          {errorMessage}
-        </p>
+        <div className="mb-6">
+          <Alert>{errorMessage}</Alert>
+        </div>
       )}
 
       {isFormVisible && (
         <div className="mb-8">
-          <SkillForm
-            onSubmit={handleCreate}
-            onCancel={() => setIsFormVisible(false)}
-          />
+          <SkillForm onSubmit={handleCreate} onCancel={() => setIsFormVisible(false)} />
         </div>
       )}
 
       {editingSkill && (
         <div className="mb-8">
           <SkillForm
+            key={editingSkill.id}
             initial={editingSkill}
             onSubmit={handleUpdate}
             onCancel={() => setEditingSkill(null)}
@@ -136,49 +147,46 @@ export default function SkillsAdminPage() {
       )}
 
       {isLoading ? (
-        <p className="text-white/40">Memuat...</p>
+        <LoadingState />
+      ) : skills.length === 0 ? (
+        <EmptyState code="NO_SKILLS">Belum ada skill ditambahkan.</EmptyState>
       ) : (
-        <div className="flex flex-wrap gap-3">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {skills.map((skill) => {
             const SkillIcon = resolveIcon(skill.icon)
             return (
-              <div
-                key={skill.id}
-                className="glass-card px-4 py-2 flex items-center gap-3"
-              >
-                <SkillIcon size={16} className="text-cyan-300" />
-                <span className="text-sm">{skill.name}</span>
-                {skill.category && (
-                  <span className="text-xs text-white/30">
-                    {skill.category}
-                  </span>
-                )}
-                <div className="flex gap-1 ml-1">
-                  <button
+              <li key={skill.id} className="adm-card flex items-center gap-3 p-3">
+                <div className="adm-thumb h-10 w-10 !border-solid !text-adm-cyan">
+                  <SkillIcon size={18} aria-hidden="true" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-adm-text">{skill.name}</p>
+                  {skill.category && (
+                    <p className="adm-mono truncate text-[0.65rem] uppercase tracking-[0.12em] text-adm-dim">
+                      {skill.category}
+                    </p>
+                  )}
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  <IconBtn
+                    label={`Edit skill ${skill.name}`}
                     onClick={() => {
                       setEditingSkill(skill)
                       setIsFormVisible(false)
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
                     }}
-                    aria-label={`Edit skill ${skill.name}`}
-                    className="p-1.5 rounded-md hover:bg-white/10 text-white/50 hover:text-cyan-400"
                   >
-                    <Pencil size={13} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(skill.id)}
-                    aria-label={`Hapus skill ${skill.name}`}
-                    className="p-1.5 rounded-md hover:bg-white/10 text-white/50 hover:text-red-400"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                    <Pencil size={14} aria-hidden="true" />
+                  </IconBtn>
+                  <ConfirmDeleteButton
+                    itemName={`skill ${skill.name}`}
+                    onConfirm={() => handleDelete(skill.id)}
+                  />
                 </div>
-              </div>
+              </li>
             )
           })}
-          {skills.length === 0 && (
-            <p className="text-white/40">Belum ada skill ditambahkan.</p>
-          )}
-        </div>
+        </ul>
       )}
     </div>
   )

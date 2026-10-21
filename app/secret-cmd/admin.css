@@ -1,0 +1,729 @@
+/* ============================================================
+   ADMIN CONSOLE — tema "Sci-Fi Game UI / Hacker Console"
+   Diimpor HANYA oleh app/secret-cmd/layout.tsx, jadi pengunjung publik
+   tidak mengunduhnya. Semua selector diawali .adm-* dan token ada di
+   .adm-root, jadi tidak bocor ke situs publik.
+
+   ATURAN DESAIN
+   • Gelap permanen — tidak mengikuti tema terang/gelap publik.
+   • Aksen neon hanya untuk: elemen aktif, fokus, status, aksi utama.
+   • Mono (JetBrains) untuk label, ID, angka, status. Sans (Inter)
+     untuk teks bacaan & isi input.
+   • Animasi hanya transform/opacity (+ glow saat hover/focus), semua
+     dimatikan di prefers-reduced-motion.
+   • Kontras: teks utama ≥ 15:1, muted ≥ 7:1, dim ≥ 5:1 di atas --adm-bg.
+   ============================================================ */
+
+.adm-root {
+  --adm-bg: 4 6 9;
+  --adm-panel: 10 14 20;
+  --adm-text: 230 237 243;
+  --adm-muted: 148 160 176;
+  --adm-dim: 122 135 152;
+  --adm-line: 110 190 255;
+  --adm-cyan: 34 211 238;
+  --adm-green: 52 211 153;
+  --adm-amber: 251 191 36;
+  --adm-red: 248 113 113;
+  --adm-violet: 167 139 250;
+
+  position: relative;
+  min-height: 100vh;
+  color: rgb(var(--adm-text));
+  background-color: rgb(var(--adm-bg));
+  color-scheme: dark;
+  /* Grid HUD tipis + glow samar di sudut. Statis (tanpa animasi). */
+  background-image:
+    radial-gradient(ellipse 60% 40% at 0% 0%, rgb(var(--adm-cyan) / 0.07), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgb(var(--adm-violet) / 0.06), transparent 70%),
+    linear-gradient(to right, rgb(var(--adm-line) / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(var(--adm-line) / 0.035) 1px, transparent 1px);
+  background-size: auto, auto, 48px 48px, 48px 48px;
+  background-attachment: fixed;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Garis scan CRT sangat halus di atas seluruh konsol (statis). */
+.adm-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0.16) 0,
+    rgb(0 0 0 / 0.16) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.35;
+}
+
+.adm-root *::selection {
+  background: rgb(var(--adm-cyan) / 0.35);
+  color: #fff;
+}
+
+.adm-mono {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+/* Fokus keyboard yang jelas di seluruh admin (WCAG 2.4.7 / 1.4.11). */
+.adm-root :focus-visible {
+  outline: 2px solid rgb(var(--adm-cyan));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- PANEL / CARD (frame HUD dengan sudut siku) ---------- */
+.adm-panel,
+.adm-card {
+  --adm-corner: rgb(var(--adm-cyan) / 0.5);
+  position: relative;
+  background: rgb(var(--adm-panel) / 0.72);
+  border: 1px solid rgb(var(--adm-line) / 0.14);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Empat siku di sudut: satu pseudo-element, 8 gradient statis. */
+.adm-panel::after,
+.adm-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--adm-corner), var(--adm-corner)) top left / 12px 1px no-repeat,
+    linear-gradient(var(--adm-corner), var(--adm-corner)) top left / 1px 12px no-repeat,
+    linear-gradient(var(--adm-corner), var(--adm-corner)) top right / 12px 1px no-repeat,
+    linear-gradient(var(--adm-corner), var(--adm-corner)) top right / 1px 12px no-repeat,
+    linear-gradient(var(--adm-corner), var(--adm-corner)) bottom left / 12px 1px no-repeat,
+    linear-gradient(var(--adm-corner), var(--adm-corner)) bottom left / 1px 12px no-repeat,
+    linear-gradient(var(--adm-corner), var(--adm-corner)) bottom right / 12px 1px no-repeat,
+    linear-gradient(var(--adm-corner), var(--adm-corner)) bottom right / 1px 12px no-repeat;
+  transition: opacity 0.25s ease;
+}
+
+.adm-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(var(--adm-cyan));
+}
+
+/* Kartu data interaktif (grid item). Hover/fokus: border menyala, siku
+   terang, garis highlight tipis menyapu di tepi atas. */
+.adm-card {
+  overflow: hidden;
+  transition: border-color 0.2s ease, background-color 0.2s ease,
+    transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.adm-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgb(var(--adm-cyan)), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s ease;
+}
+
+.adm-card:hover,
+.adm-card:focus-within {
+  border-color: rgb(var(--adm-cyan) / 0.45);
+  background-color: rgb(var(--adm-cyan) / 0.05);
+  box-shadow: 0 0 0 1px rgb(var(--adm-cyan) / 0.12), 0 8px 30px -14px rgb(var(--adm-cyan) / 0.45);
+  --adm-corner: rgb(var(--adm-cyan));
+}
+
+.adm-card:hover::before,
+.adm-card:focus-within::before {
+  transform: scaleX(1);
+}
+
+/* Varian aksen kartu lewat data-accent (dipakai Timeline: karir vs pendidikan). */
+.adm-card[data-accent='violet']:hover,
+.adm-card[data-accent='violet']:focus-within {
+  border-color: rgb(var(--adm-violet) / 0.5);
+  background-color: rgb(var(--adm-violet) / 0.05);
+  box-shadow: 0 0 0 1px rgb(var(--adm-violet) / 0.12), 0 8px 30px -14px rgb(var(--adm-violet) / 0.45);
+  --adm-corner: rgb(var(--adm-violet));
+}
+.adm-card[data-accent='violet']::before {
+  background: linear-gradient(to right, transparent, rgb(var(--adm-violet)), transparent);
+}
+.adm-card[data-accent='amber']:hover,
+.adm-card[data-accent='amber']:focus-within {
+  border-color: rgb(var(--adm-amber) / 0.5);
+  background-color: rgb(var(--adm-amber) / 0.05);
+  box-shadow: 0 0 0 1px rgb(var(--adm-amber) / 0.12), 0 8px 30px -14px rgb(var(--adm-amber) / 0.4);
+  --adm-corner: rgb(var(--adm-amber));
+}
+.adm-card[data-accent='amber']::before {
+  background: linear-gradient(to right, transparent, rgb(var(--adm-amber)), transparent);
+}
+
+.adm-card[data-unread='true'] {
+  border-color: rgb(var(--adm-cyan) / 0.35);
+}
+
+/* ---------- FORM ---------- */
+.adm-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(var(--adm-muted));
+}
+
+.adm-hint {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: rgb(var(--adm-dim));
+}
+
+/* Input: latar semi-transparan, garis bawah menonjol (gaya terminal),
+   saat fokus seluruh border menyala cyan + glow lembut. */
+.adm-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgb(var(--adm-text));
+  background: rgb(255 255 255 / 0.035);
+  border: 1px solid rgb(var(--adm-line) / 0.14);
+  border-bottom-color: rgb(var(--adm-line) / 0.4);
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.18s ease, background-color 0.18s ease,
+    box-shadow 0.2s ease;
+}
+
+.adm-input::placeholder {
+  color: rgb(var(--adm-dim));
+}
+
+.adm-input:hover:not(:disabled) {
+  border-color: rgb(var(--adm-line) / 0.3);
+  border-bottom-color: rgb(var(--adm-cyan) / 0.55);
+}
+
+.adm-input:focus {
+  border-color: rgb(var(--adm-cyan) / 0.85);
+  background: rgb(var(--adm-cyan) / 0.06);
+  box-shadow: 0 0 0 1px rgb(var(--adm-cyan) / 0.3), 0 6px 20px -8px rgb(var(--adm-cyan) / 0.55);
+}
+
+.adm-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.adm-input[data-accent='violet']:focus {
+  border-color: rgb(var(--adm-violet) / 0.9);
+  background: rgb(var(--adm-violet) / 0.06);
+  box-shadow: 0 0 0 1px rgb(var(--adm-violet) / 0.3), 0 6px 20px -8px rgb(var(--adm-violet) / 0.55);
+}
+
+textarea.adm-input {
+  resize: vertical;
+  min-height: 5.5rem;
+}
+
+select.adm-input {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, rgb(var(--adm-cyan)) 50%),
+    linear-gradient(135deg, rgb(var(--adm-cyan)) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 2.2rem;
+}
+
+/* Input file: tombol "Pilih file" bergaya konsol. */
+.adm-file {
+  font-size: 0.8rem;
+  color: rgb(var(--adm-muted));
+  max-width: 100%;
+}
+.adm-file::file-selector-button {
+  margin-right: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(var(--adm-cyan));
+  background: rgb(var(--adm-cyan) / 0.08);
+  border: 1px solid rgb(var(--adm-cyan) / 0.4);
+  border-radius: 2px;
+  transition: background-color 0.18s ease, box-shadow 0.2s ease;
+}
+.adm-file:hover::file-selector-button {
+  background: rgb(var(--adm-cyan) / 0.18);
+  box-shadow: 0 0 14px -4px rgb(var(--adm-cyan) / 0.6);
+}
+
+.adm-check {
+  width: 1rem;
+  height: 1rem;
+  accent-color: rgb(var(--adm-cyan));
+}
+
+/* Kotak pratinjau (gambar / ikon file). */
+.adm-thumb {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(var(--adm-dim));
+  background: rgb(255 255 255 / 0.03);
+  border: 1px dashed rgb(var(--adm-line) / 0.3);
+  border-radius: 2px;
+}
+
+/* Tombol pilihan (segmented): tipe, ukuran, ikon. */
+.adm-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.5rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(var(--adm-muted));
+  background: rgb(255 255 255 / 0.03);
+  border: 1px solid rgb(var(--adm-line) / 0.16);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease,
+    box-shadow 0.2s ease;
+}
+.adm-choice:hover {
+  color: rgb(var(--adm-text));
+  border-color: rgb(var(--adm-cyan) / 0.5);
+}
+.adm-choice[aria-pressed='true'] {
+  color: rgb(var(--adm-cyan));
+  border-color: rgb(var(--adm-cyan) / 0.8);
+  background: rgb(var(--adm-cyan) / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(var(--adm-cyan) / 0.25), 0 0 16px -6px rgb(var(--adm-cyan) / 0.6);
+}
+
+/* Switch (role="switch"). */
+.adm-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 1.5rem;
+  border-radius: 2px;
+  cursor: pointer;
+  background: rgb(255 255 255 / 0.06);
+  border: 1px solid rgb(var(--adm-line) / 0.3);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.adm-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.1rem;
+  height: calc(100% - 4px);
+  background: rgb(var(--adm-muted));
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.adm-switch[aria-checked='true'] {
+  background: rgb(var(--adm-green) / 0.2);
+  border-color: rgb(var(--adm-green) / 0.7);
+}
+.adm-switch[aria-checked='true']::after {
+  transform: translateX(1.2rem);
+  background: rgb(var(--adm-green));
+}
+
+/* ---------- TOMBOL ---------- */
+.adm-btn {
+  --btn: var(--adm-cyan);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  min-height: 2.5rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  color: rgb(var(--btn));
+  background: rgb(var(--btn) / 0.08);
+  border: 1px solid rgb(var(--btn) / 0.5);
+  border-radius: 2px;
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.25s ease, color 0.18s ease;
+}
+
+/* Scanline tipis yang menyapu tombol saat hover/fokus. */
+.adm-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgb(var(--btn) / 0.28) 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.55s ease;
+}
+
+.adm-btn:hover:not(:disabled),
+.adm-btn:focus-visible {
+  background: rgb(var(--btn) / 0.16);
+  border-color: rgb(var(--btn) / 0.95);
+  box-shadow: 0 0 18px -4px rgb(var(--btn) / 0.65), inset 0 0 0 1px rgb(var(--btn) / 0.2);
+}
+
+.adm-btn:hover:not(:disabled)::before,
+.adm-btn:focus-visible::before {
+  transform: translateX(120%);
+}
+
+.adm-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.adm-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.adm-btn[data-variant='ghost'] {
+  --btn: var(--adm-muted);
+  background: transparent;
+  border-color: rgb(var(--adm-line) / 0.22);
+}
+.adm-btn[data-variant='ghost']:hover:not(:disabled) {
+  --btn: var(--adm-text);
+  border-color: rgb(var(--adm-text) / 0.5);
+}
+.adm-btn[data-variant='danger'] {
+  --btn: var(--adm-red);
+}
+.adm-btn[data-variant='success'] {
+  --btn: var(--adm-green);
+}
+.adm-btn[data-variant='violet'] {
+  --btn: var(--adm-violet);
+}
+.adm-btn[data-variant='amber'] {
+  --btn: var(--adm-amber);
+}
+
+.adm-btn[data-size='sm'] {
+  min-height: 2rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.68rem;
+}
+
+/* Tombol ikon (edit/hapus di kartu): target sentuh min 40px. */
+.adm-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0 0.6rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: rgb(var(--adm-muted));
+  background: transparent;
+  border: 1px solid rgb(var(--adm-line) / 0.16);
+  border-radius: 2px;
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease,
+    box-shadow 0.2s ease;
+}
+.adm-iconbtn:hover:not(:disabled) {
+  color: rgb(var(--adm-cyan));
+  border-color: rgb(var(--adm-cyan) / 0.7);
+  background: rgb(var(--adm-cyan) / 0.08);
+  box-shadow: 0 0 14px -5px rgb(var(--adm-cyan) / 0.6);
+}
+.adm-iconbtn[data-tone='danger']:hover:not(:disabled),
+.adm-iconbtn[data-armed='true'] {
+  color: rgb(var(--adm-red));
+  border-color: rgb(var(--adm-red) / 0.75);
+  background: rgb(var(--adm-red) / 0.1);
+  box-shadow: 0 0 14px -5px rgb(var(--adm-red) / 0.65);
+}
+.adm-iconbtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ---------- TAG / STATUS / ALERT ---------- */
+.adm-tag {
+  --tag: var(--adm-cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.18rem 0.5rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgb(var(--tag));
+  background: rgb(var(--tag) / 0.09);
+  border: 1px solid rgb(var(--tag) / 0.4);
+  border-radius: 2px;
+}
+.adm-tag[data-tone='green'] { --tag: var(--adm-green); }
+.adm-tag[data-tone='amber'] { --tag: var(--adm-amber); }
+.adm-tag[data-tone='red'] { --tag: var(--adm-red); }
+.adm-tag[data-tone='violet'] { --tag: var(--adm-violet); }
+.adm-tag[data-tone='muted'] { --tag: var(--adm-muted); }
+
+.adm-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: rgb(var(--tag, var(--adm-green)));
+  flex-shrink: 0;
+}
+.adm-dot[data-pulse='true'] {
+  animation: adm-pulse 2.4s ease-in-out infinite;
+}
+@keyframes adm-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+
+.adm-alert {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: rgb(var(--adm-text));
+  background: rgb(var(--adm-red) / 0.08);
+  border: 1px solid rgb(var(--adm-red) / 0.45);
+  border-left-width: 3px;
+  border-radius: 2px;
+}
+.adm-alert[data-tone='success'] {
+  background: rgb(var(--adm-green) / 0.08);
+  border-color: rgb(var(--adm-green) / 0.45);
+}
+.adm-alert-code {
+  flex-shrink: 0;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: rgb(var(--adm-red));
+}
+.adm-alert[data-tone='success'] .adm-alert-code {
+  color: rgb(var(--adm-green));
+}
+
+/* ---------- NAVIGASI (sidebar HUD) ---------- */
+.adm-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  min-height: 2.75rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: rgb(var(--adm-muted));
+  border: 1px solid transparent;
+  border-radius: 2px;
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, box-shadow 0.25s ease;
+}
+.adm-nav-item:hover {
+  color: rgb(var(--adm-text));
+  background: rgb(var(--adm-cyan) / 0.05);
+  border-color: rgb(var(--adm-line) / 0.2);
+}
+.adm-nav-item[aria-current='page'] {
+  color: rgb(var(--adm-cyan));
+  background: linear-gradient(to right, rgb(var(--adm-cyan) / 0.14), rgb(var(--adm-cyan) / 0.02));
+  border-color: rgb(var(--adm-cyan) / 0.5);
+  box-shadow: 0 0 22px -8px rgb(var(--adm-cyan) / 0.7), inset 0 0 0 1px rgb(var(--adm-cyan) / 0.1);
+}
+/* Penanda batang kiri pada menu aktif. */
+.adm-nav-item[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  background: rgb(var(--adm-cyan));
+  box-shadow: 0 0 10px rgb(var(--adm-cyan));
+}
+.adm-nav-index {
+  width: 1.4rem;
+  font-size: 0.65rem;
+  color: rgb(var(--adm-dim));
+}
+.adm-nav-item[aria-current='page'] .adm-nav-index {
+  color: rgb(var(--adm-cyan) / 0.8);
+}
+
+/* ---------- LAYOUT ---------- */
+.adm-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  width: 17rem;
+  /* Mobile: disembunyikan (menu lewat drawer). display diatur di sini,
+     BUKAN lewat utilitas Tailwind max-lg:hidden — CSS di file ini tidak
+     berlapis (@layer) sehingga selalu mengalahkan utilitas Tailwind. */
+  display: none;
+  flex-direction: column;
+  background: rgb(var(--adm-bg) / 0.92);
+  border-right: 1px solid rgb(var(--adm-line) / 0.14);
+}
+
+.adm-content {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1024px) {
+  .adm-sidebar {
+    display: flex;
+  }
+  .adm-content {
+    margin-left: 17rem;
+  }
+}
+
+/* Judul halaman. */
+.adm-h1 {
+  font-family: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
+  font-size: clamp(1.35rem, 1rem + 1.6vw, 1.9rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: rgb(var(--adm-text));
+}
+
+.adm-crumb {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(var(--adm-cyan));
+}
+
+/* Teks "[ MEMUAT... ]" berkedip lembut. */
+.adm-loading {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  color: rgb(var(--adm-muted));
+}
+.adm-loading span {
+  animation: adm-pulse 1.4s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* Kursor terminal berkedip di judul. */
+.adm-caret::after {
+  content: '_';
+  margin-left: 0.15em;
+  color: rgb(var(--adm-cyan));
+  animation: adm-blink 1.1s steps(1) infinite;
+}
+@keyframes adm-blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-root *,
+  .adm-root *::before,
+  .adm-root *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+  .adm-btn::before {
+    display: none;
+  }
+}
+
+/* ---------- <details> (case study) ---------- */
+.adm-details {
+  border: 1px solid rgb(var(--adm-line) / 0.16);
+  background: rgb(255 255 255 / 0.02);
+  border-radius: 2px;
+}
+.adm-details[open] {
+  border-color: rgb(var(--adm-cyan) / 0.35);
+}
+.adm-summary {
+  cursor: pointer;
+  padding: 0.8rem 1rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--adm-muted));
+  user-select: none;
+  list-style: none;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+.adm-summary::-webkit-details-marker {
+  display: none;
+}
+.adm-summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 0.6rem;
+  color: rgb(var(--adm-cyan));
+  transition: transform 0.2s ease;
+}
+.adm-details[open] > .adm-summary::before {
+  transform: rotate(90deg);
+}
+.adm-summary:hover {
+  color: rgb(var(--adm-text));
+  background: rgb(var(--adm-cyan) / 0.05);
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 
@@ -25,6 +25,7 @@ export default function ImageUpload({
   onUploaded,
   label = 'Gambar',
 }: ImageUploadProps) {
+  const inputId = useId()
   const supabase = createClient()
   const [isUploading, setIsUploading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -72,9 +73,9 @@ export default function ImageUpload({
 
   return (
     <div>
-      <label className="block text-sm text-white/50 mb-2">{label}</label>
+      <label htmlFor={inputId} className="adm-label">{label}</label>
       <div className="flex items-center gap-4">
-        <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/10 bg-white/5 shrink-0">
+        <div className="adm-thumb h-20 w-20">
           {currentUrl ? (
             <Image
               src={currentUrl}
@@ -84,7 +85,7 @@ export default function ImageUpload({
               className="object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">
+            <div className="adm-mono text-xs text-adm-dim">
               No Image
             </div>
           )}
@@ -92,17 +93,18 @@ export default function ImageUpload({
 
         <div>
           <input
+            id={inputId}
             type="file"
             accept="image/*"
             onChange={handleFileSelected}
             disabled={isUploading}
-            className="text-sm text-white/60 file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border file:border-white/10 file:bg-white/5 file:text-white/70 file:cursor-pointer hover:file:bg-white/10"
+            className="adm-file"
           />
           {isUploading && (
-            <p className="text-xs text-cyan-400 mt-1">Mengunggah...</p>
+            <p className="adm-hint !text-adm-cyan">Mengunggah...</p>
           )}
           {errorMessage && (
-            <p className="text-xs text-red-400 mt-1">{errorMessage}</p>
+            <p className="adm-hint !text-adm-red">{errorMessage}</p>
           )}
         </div>
       </div>

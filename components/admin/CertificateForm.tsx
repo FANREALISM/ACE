@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Certificate } from '@/lib/types'
 import ImageUpload from './ImageUpload'
+import { Btn } from '@/components/admin/AdminUI'
 
 interface CertificateFormProps {
   initial?: Partial<Certificate>
@@ -52,78 +53,81 @@ export default function CertificateForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="adm-panel space-y-5 p-5 sm:p-6">
+      <h2 className="adm-panel-title">
+        <span aria-hidden="true">▸</span>[ {initial ? 'EDIT_DATA' : 'NEW_ENTRY'} ]
+      </h2>
       <div>
-        <label className="block text-sm text-white/50 mb-1">
-          Judul Sertifikat <span className="text-red-400/70">(wajib)</span>
+        <label htmlFor="certificateform-1" className="adm-label">
+          Judul Sertifikat <span className="text-adm-red">(wajib)</span>
         </label>
-        <input
+        <input id="certificateform-1"
           value={title}
           onChange={(changeEvent) => setTitle(changeEvent.target.value)}
           required
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
       <div>
-        <label className="block text-sm text-white/50 mb-1">
-          Penerbit <span className="text-red-400/70">(wajib)</span>
+        <label htmlFor="certificateform-2" className="adm-label">
+          Penerbit <span className="text-adm-red">(wajib)</span>
         </label>
-        <input
+        <input id="certificateform-2"
           value={issuer}
           onChange={(changeEvent) => setIssuer(changeEvent.target.value)}
           required
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
       <div>
-        <label className="block text-sm text-white/50 mb-1">
-          Tanggal Terbit <span className="text-white/30">(opsional)</span>
+        <label htmlFor="certificateform-3" className="adm-label">
+          Tanggal Terbit <span className="text-adm-dim">(opsional)</span>
         </label>
-        <input
+        <input id="certificateform-3"
           type="date"
           value={issueDate ?? ''}
           onChange={(changeEvent) => setIssueDate(changeEvent.target.value)}
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
       <div>
-        <label className="block text-sm text-white/50 mb-1">
-          Tanggal Kedaluwarsa <span className="text-white/30">(opsional)</span>
+        <label htmlFor="certificateform-4" className="adm-label">
+          Tanggal Kedaluwarsa <span className="text-adm-dim">(opsional)</span>
         </label>
-        <input
+        <input id="certificateform-4"
           type="date"
           value={expiryDate ?? ''}
           onChange={(changeEvent) => setExpiryDate(changeEvent.target.value)}
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
-        <p className="text-xs text-white/30 mt-1">
+        <p className="adm-hint">
           Isi kalau sertifikat punya masa berlaku (mis. AWS, Azure).
           Kosongkan kalau berlaku selamanya.
         </p>
       </div>
       <div>
-        <label className="block text-sm text-white/50 mb-1">
-          Credential ID <span className="text-white/30">(opsional)</span>
+        <label htmlFor="certificateform-5" className="adm-label">
+          Credential ID <span className="text-adm-dim">(opsional)</span>
         </label>
-        <input
+        <input id="certificateform-5"
           value={credentialId ?? ''}
           onChange={(changeEvent) => setCredentialId(changeEvent.target.value)}
           placeholder="mis. ABC-1234-XYZ"
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
-        <p className="text-xs text-white/30 mt-1">
+        <p className="adm-hint">
           Nomor/ID unik sertifikat — beda dari URL verifikasi di bawah,
           biasanya dipakai untuk verifikasi manual.
         </p>
       </div>
       <div>
-        <label className="block text-sm text-white/50 mb-1">
-          URL Kredensial <span className="text-white/30">(opsional)</span>
+        <label htmlFor="certificateform-6" className="adm-label">
+          URL Kredensial <span className="text-adm-dim">(opsional)</span>
         </label>
-        <input
+        <input id="certificateform-6"
           value={credentialUrl ?? ''}
           onChange={(changeEvent) => setCredentialUrl(changeEvent.target.value)}
-          className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+          className="adm-input"
         />
       </div>
 
@@ -135,33 +139,21 @@ export default function CertificateForm({
           label="Upload Gambar Sertifikat"
         />
         <div>
-          <label className="block text-sm text-white/50 mb-1">
+          <label htmlFor="certificateform-7" className="adm-label">
             Atau URL Gambar (dari internet)
           </label>
-          <input
+          <input id="certificateform-7"
             value={imageUrl ?? ''}
             onChange={(changeEvent) => setImageUrl(changeEvent.target.value)}
             placeholder="https://..."
-            className="w-full px-4 py-2 rounded-lg bg-black/40 border border-white/10 outline-none focus:border-cyan-400"
+            className="adm-input"
           />
         </div>
       </div>
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="px-6 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
-        >
-          {isSaving ? 'Menyimpan...' : 'Simpan'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-6 py-2 rounded-lg border border-white/10 text-white/60 hover:text-white transition-colors"
-        >
-          Batal
-        </button>
+        <Btn type="submit" disabled={isSaving}>{isSaving ? 'MENYIMPAN...' : 'SIMPAN'}</Btn>
+        <Btn variant="ghost" onClick={onCancel}>BATAL</Btn>
       </div>
     </form>
   )

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import './admin.css'
 
 /**
  * Layout ini membungkus SEMUA route di bawah /secret-cmd — login DAN

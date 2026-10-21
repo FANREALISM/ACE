@@ -5,9 +5,19 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import AboutSectionForm from '@/components/admin/AboutSectionForm'
 import type { AboutSection } from '@/lib/types'
-import { Pencil, Trash2, Plus, ArrowUp, ArrowDown } from 'lucide-react'
+import { Pencil, Plus, ArrowUp, ArrowDown } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import {
+  Alert,
+  Btn,
+  ConfirmDeleteButton,
+  EmptyState,
+  IconBtn,
+  LoadingState,
+  PageHeader,
+  StatusTag,
+} from '@/components/admin/AdminUI'
 
 function resolveIcon(iconName: string): LucideIcon {
   return (Icons as unknown as Record<string, LucideIcon>)[iconName] ?? Icons.Cpu
@@ -85,7 +95,6 @@ export default function AboutAdminPage() {
   }
 
   async function handleDelete(sectionId: string) {
-    if (!confirm('Yakin hapus paragraf ini?')) return
     setErrorMessage(null)
     const { error: deleteError } = await supabase
       .from('about_sections')
@@ -131,38 +140,39 @@ export default function AboutAdminPage() {
     loadSections()
   }
 
+  const isEditorOpen = isFormVisible || editingSection !== null
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Kelola Tentang Saya</h1>
-        {!isFormVisible && !editingSection && (
-          <button
-            onClick={() => setIsFormVisible(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
-          >
-            <Plus size={16} /> Tambah Paragraf
-          </button>
-        )}
-      </div>
+      <PageHeader
+        code="ABOUT_LOG"
+        title="Kelola Tentang Saya"
+        description="Urutan kartu di bawah = urutan paragraf di halaman publik. Pakai panah untuk memindahkan."
+        actions={
+          !isEditorOpen && (
+            <Btn icon={<Plus size={15} aria-hidden="true" />} onClick={() => setIsFormVisible(true)}>
+              TAMBAH_PARAGRAF
+            </Btn>
+          )
+        }
+      />
 
       {errorMessage && (
-        <p className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3">
-          {errorMessage}
-        </p>
+        <div className="mb-6">
+          <Alert>{errorMessage}</Alert>
+        </div>
       )}
 
       {isFormVisible && (
         <div className="mb-8">
-          <AboutSectionForm
-            onSubmit={handleCreate}
-            onCancel={() => setIsFormVisible(false)}
-          />
+          <AboutSectionForm onSubmit={handleCreate} onCancel={() => setIsFormVisible(false)} />
         </div>
       )}
 
       {editingSection && (
         <div className="mb-8">
           <AboutSectionForm
+            key={editingSection.id}
             initial={editingSection}
             onSubmit={handleUpdate}
             onCancel={() => setEditingSection(null)}
@@ -171,79 +181,79 @@ export default function AboutAdminPage() {
       )}
 
       {isLoading ? (
-        <p className="text-white/40">Memuat...</p>
+        <LoadingState />
+      ) : sections.length === 0 ? (
+        <EmptyState code="NO_SECTIONS">Belum ada paragraf.</EmptyState>
       ) : (
-        <div className="space-y-3">
-          {sections.map((section, sectionIndex) => (
-            <div key={section.id} className="glass-card p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 shrink-0">
-                    {(() => {
-                      const SectionIcon = resolveIcon(section.icon)
-                      return <SectionIcon size={14} />
-                    })()}
+        <ol className="space-y-3">
+          {sections.map((section, sectionIndex) => {
+            const SectionIcon = resolveIcon(section.icon)
+            return (
+              <li key={section.id} className="adm-card p-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <span
+                      aria-hidden="true"
+                      className="adm-mono w-7 shrink-0 pt-1 text-xs text-adm-dim"
+                    >
+                      {String(sectionIndex + 1).padStart(2, '0')}
+                    </span>
+                    <div className="adm-thumb h-9 w-9 !border-solid !text-adm-cyan">
+                      <SectionIcon size={16} aria-hidden="true" />
+                    </div>
+                    {section.image_url && (
+                      <Image
+                        src={section.image_url}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 shrink-0 border border-adm-line/20 object-cover"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <h2 className="adm-mono mb-1 text-xs uppercase tracking-[0.12em] text-adm-cyan">
+                        [ {section.title} ]
+                      </h2>
+                      <p className="line-clamp-2 text-sm leading-relaxed text-adm-muted">
+                        {section.content}
+                      </p>
+                    </div>
                   </div>
-                  {section.image_url && (
-                    <Image
-                      src={section.image_url}
-                      alt={section.title}
-                      width={40}
-                      height={40}
-                      className="w-10 h-10 rounded-lg object-cover border border-white/10 shrink-0"
+                  <div className="flex shrink-0 gap-1.5 self-end sm:self-start">
+                    <IconBtn
+                      label="Pindahkan paragraf ke atas"
+                      onClick={() => handleMoveSection(sectionIndex, 'up')}
+                      disabled={sectionIndex === 0}
+                    >
+                      <ArrowUp size={15} aria-hidden="true" />
+                    </IconBtn>
+                    <IconBtn
+                      label="Pindahkan paragraf ke bawah"
+                      onClick={() => handleMoveSection(sectionIndex, 'down')}
+                      disabled={sectionIndex === sections.length - 1}
+                    >
+                      <ArrowDown size={15} aria-hidden="true" />
+                    </IconBtn>
+                    <IconBtn
+                      label={`Edit paragraf ${section.title}`}
+                      onClick={() => {
+                        setEditingSection(section)
+                        setIsFormVisible(false)
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
+                    >
+                      <Pencil size={15} aria-hidden="true" />
+                    </IconBtn>
+                    <ConfirmDeleteButton
+                      itemName={`paragraf ${section.title}`}
+                      onConfirm={() => handleDelete(section.id)}
                     />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-mono text-xs uppercase text-cyan-400/70 mb-1">
-                      [ {section.title} ]
-                    </p>
-                    <p className="text-sm text-white/50 line-clamp-2">
-                      {section.content}
-                    </p>
                   </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    onClick={() => handleMoveSection(sectionIndex, 'up')}
-                    disabled={sectionIndex === 0}
-                    aria-label="Pindahkan paragraf ke atas"
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
-                  >
-                    <ArrowUp size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleMoveSection(sectionIndex, 'down')}
-                    disabled={sectionIndex === sections.length - 1}
-                    aria-label="Pindahkan paragraf ke bawah"
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400 disabled:opacity-20 disabled:hover:bg-transparent"
-                  >
-                    <ArrowDown size={16} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingSection(section)
-                      setIsFormVisible(false)
-                    }}
-                    aria-label="Edit paragraf ini"
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-cyan-400"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(section.id)}
-                    aria-label="Hapus paragraf ini"
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-red-400"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-          {sections.length === 0 && (
-            <p className="text-white/40">Belum ada paragraf.</p>
-          )}
-        </div>
+              </li>
+            )
+          })}
+        </ol>
       )}
     </div>
   )

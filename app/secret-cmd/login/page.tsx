@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Alert, Btn } from '@/components/admin/AdminUI'
 
 /**
  * Halaman login admin — SENGAJA di luar route group (protected), bukan
@@ -42,43 +43,64 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black px-4">
-      <form
-        onSubmit={handleLoginSubmit}
-        className="w-full max-w-sm p-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl"
-      >
-        <h1 className="text-xl font-semibold text-white mb-6">
-          Admin Access
-        </h1>
-
-        {errorMessage && (
-          <p className="text-red-400 text-sm mb-4">{errorMessage}</p>
-        )}
-
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(changeEvent) => setEmail(changeEvent.target.value)}
-          required
-          className="w-full mb-3 px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(changeEvent) => setPassword(changeEvent.target.value)}
-          required
-          className="w-full mb-4 px-4 py-2 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-cyan-400"
-        />
-        <button
-          type="submit"
-          disabled={isLoggingIn}
-          className="w-full py-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
+    <div className="adm-root flex min-h-screen items-center justify-center px-4">
+      <main className="adm-content w-full max-w-sm">
+        <form
+          onSubmit={handleLoginSubmit}
+          aria-labelledby="login-title"
+          className="adm-panel space-y-5 p-7 sm:p-8"
         >
-          {isLoggingIn ? 'Memproses...' : 'Login'}
-        </button>
-      </form>
+          <div>
+            <p className="adm-crumb mb-2">[ AUTH_GATE ]</p>
+            <h1 id="login-title" className="adm-h1 adm-caret">
+              Admin Access
+            </h1>
+            <p className="adm-mono mt-3 flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.18em] text-adm-amber">
+              <span
+                aria-hidden="true"
+                className="adm-dot"
+                data-pulse="true"
+                style={{ ['--tag' as string]: 'var(--adm-amber)' }}
+              />
+              Restricted · identifikasi diperlukan
+            </p>
+          </div>
+
+          {errorMessage && <Alert>{errorMessage}</Alert>}
+
+          <div>
+            <label htmlFor="login-email" className="adm-label">
+              Email
+            </label>
+            <input
+              id="login-email"
+              type="email"
+              autoComplete="username"
+              value={email}
+              onChange={(changeEvent) => setEmail(changeEvent.target.value)}
+              required
+              className="adm-input"
+            />
+          </div>
+          <div>
+            <label htmlFor="login-password" className="adm-label">
+              Password
+            </label>
+            <input
+              id="login-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(changeEvent) => setPassword(changeEvent.target.value)}
+              required
+              className="adm-input"
+            />
+          </div>
+          <Btn type="submit" disabled={isLoggingIn} className="w-full">
+            {isLoggingIn ? 'MEMPROSES...' : 'LOGIN'}
+          </Btn>
+        </form>
+      </main>
     </div>
   )
 }
