@@ -1,24 +1,41 @@
+import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { SITE_URL, buildPageMetadata, serializeJsonLd } from '@/lib/seo'
 import type { Metadata } from 'next'
 import { ArrowLeft, ExternalLink, Github } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import type { Project } from '@/lib/types'
 
 /** Ambil satu proyek berdasarkan id. Return null (bukan throw) kalau
  *  tidak ditemukan — biar pemanggil yang putuskan mau notFound() atau
  *  penanganan lain. */
-async function getProjectById(projectId: string): Promise<Project | null> {
-  const supabase = await createClient()
+/** Halaman studi kasus di-cache (ISR), lihat catatan di app/page.tsx. */
+export const revalidate = 60
+
+/** Tanpa generateStaticParams, rute dinamis [id] dirender di setiap request
+ *  (Cache-Control: no-store) walau `revalidate` diset. Dengan ini, semua
+ *  studi kasus yang ada di-prerender saat build, dan proyek baru dibuat
+ *  on-demand lalu di-cache (dynamicParams default = true). */
+export async function generateStaticParams() {
+  try {
+    const { data } = await createPublicClient().from('projects').select('id')
+    return (data ?? []).map((row: { id: string | number }) => ({ id: String(row.id) }))
+  } catch {
+    return []
+  }
+}
+
+const getProjectById = cache(async function getProjectById(projectId: string): Promise<Project | null> {
+  const supabase = createPublicClient()
   const { data: projectRow } = await supabase
     .from('projects')
     .select('*')
     .eq('id', projectId)
     .maybeSingle()
   return (projectRow as Project) ?? null
-}
+})
 
 export async function generateMetadata({
   params,

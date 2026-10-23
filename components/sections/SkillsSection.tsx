@@ -1,6 +1,6 @@
 'use client'
 
-import * as Icons from 'lucide-react'
+import { Code2, getIcon } from '@/lib/icons'
 import type { LucideIcon } from 'lucide-react'
 import type { Skill } from '@/lib/types'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
@@ -11,9 +11,7 @@ import Reveal from '@/components/ui/Reveal'
  *  ikon default section ini terasa relevan dengan "skill/tech" kalau
  *  admin belum sempat pilih ikon spesifik). */
 function resolveIcon(iconName: string): LucideIcon {
-  return (
-    (Icons as unknown as Record<string, LucideIcon>)[iconName] ?? Icons.Code2
-  )
+  return getIcon(iconName, Code2)
 }
 
 /** Jumlah minimum chip dalam satu "putaran" marquee. Kalau skill cuma

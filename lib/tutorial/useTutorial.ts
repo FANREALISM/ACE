@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react'
 import { usePathname } from 'next/navigation'
+import { hasInteracted, onFirstInteraction } from '@/lib/interaction'
 import { DEFAULT_UI_THEME, useUITheme, type UITheme } from '@/lib/ui/UIThemeContext'
 import { TUTORIAL_STEPS, TUTORIAL_STORAGE_KEYS, type TutorialStep } from './steps'
 
@@ -17,9 +18,9 @@ import { TUTORIAL_STEPS, TUTORIAL_STORAGE_KEYS, type TutorialStep } from './step
  *  (pola yang sama dengan 'open-command-palette'). */
 export const START_TUTORIAL_EVENT = 'start-tutorial'
 
-/** Jeda sebelum tutorial otomatis muncul: biarkan halaman selesai
- *  menggambar dan transisi ganti-UI (kilatan) selesai dulu. */
-const AUTO_START_DELAY_MS = 1200
+/** Jeda sebelum tutorial otomatis muncul (setelah interaksi pertama):
+ *  biarkan transisi ganti-UI (kilatan) selesai dulu. */
+const AUTO_START_DELAY_MS = 900
 
 export interface TutorialApi {
   isActive: boolean
@@ -119,13 +120,29 @@ export function useTutorialController(): TutorialApi {
     setStepIndex((current) => Math.max(current - 1, 0))
   }, [])
 
-  // Auto-start / reset saat UI atau halaman berubah.
+  // Auto-start / reset saat UI atau halaman berubah. Tutorial otomatis TIDAK
+  // muncul saat halaman dimuat: dialog yang muncul sendiri di tengah
+  // pemuatan menjadi elemen LCP terbesar dan menambah CLS/TBT (terukur di
+  // Lighthouse: LCP 3,5 dtk dari dialog ini). Belum ada interaksi → tunggu
+  // interaksi pertama. Sudah ada (mis. baru menekan tombol ganti UI) →
+  // langsung (setelah jeda singkat).
   useEffect(() => {
     setIsActive(false)
     if (!resolvedUI || isAdminRoute || !isHome) return
     if (readSeen(resolvedUI)) return
-    const timer = window.setTimeout(start, AUTO_START_DELAY_MS)
-    return () => window.clearTimeout(timer)
+
+    let timer = 0
+    const schedule = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(start, AUTO_START_DELAY_MS)
+    }
+    const cancelInteractionWait = hasInteracted()
+      ? (schedule(), () => {})
+      : onFirstInteraction(schedule)
+    return () => {
+      window.clearTimeout(timer)
+      cancelInteractionWait()
+    }
   }, [resolvedUI, isAdminRoute, isHome, start])
 
   // Replay dari tombol / command palette. Jeda singkat supaya fokus yang

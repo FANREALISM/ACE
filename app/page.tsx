@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { cache } from 'react'
+import { createPublicClient } from '@/lib/supabase/public'
 import type {
   Profile,
   Project,
@@ -28,8 +29,16 @@ import {
 /** Ambil semua data yang dibutuhkan halaman utama dalam satu batch
  *  paralel (Promise.all) — lebih cepat daripada fetch berurutan satu-
  *  satu, karena keenam query jalan bersamaan, bukan menunggu giliran. */
-async function getData() {
-  const supabase = await createClient()
+/** Halaman di-cache di CDN (ISR) dan dibangun ulang di latar belakang paling
+ *  cepat tiap 60 detik: pengunjung dapat HTML instan tanpa menunggu enam
+ *  query Supabase. Konsekuensinya: perubahan dari admin tampil di halaman
+ *  publik dalam ≤ 60 detik, bukan seketika. */
+export const revalidate = 60
+
+/** cache(): generateMetadata dan Home memakai data yang sama dalam satu
+ *  render — cukup satu batch query, bukan dua. */
+const getData = cache(async function getData() {
+  const supabase = createPublicClient()
 
   const [
     { data: profile },
@@ -61,7 +70,7 @@ async function getData() {
     skills: (skills as Skill[]) ?? [],
     timelineEntries: (timelineEntries as TimelineEntry[]) ?? [],
   }
-}
+})
 
 /**
  * Metadata dinamis (title, description, Open Graph, Twitter Card) yang

@@ -961,11 +961,13 @@ html.ui-switching::after {
    elemen ini statis (hanya top/left/width/height berubah per langkah). */
 .tut-spot {
   position: fixed;
+  top: 0;
+  left: 0;
   z-index: 10000;
   pointer-events: none;
   border-radius: 6px;
   box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.74);
-  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
+  transition: transform 0.25s ease, width 0.25s ease, height 0.25s ease;
 }
 .tut-spot::after {
   content: '';
@@ -998,11 +1000,10 @@ html.ui-switching::after {
 }
 @keyframes tut-pulse { 50% { opacity: 0.45; } }
 
-.tut-dialog {
-  transition: top 0.25s ease, left 0.25s ease;
-  animation: tut-in 0.22s ease-out;
-}
-@keyframes tut-in { from { opacity: 0; transform: scale(0.97); } }
+.tut-dialog { animation: tut-in 0.22s ease-out; }
+.tut-dialog-glide { transition: transform 0.25s ease; }
+/* opacity saja: animasi `transform` akan bentrok dengan translate posisi dialog. */
+@keyframes tut-in { from { opacity: 0; } }
 
 .tut-step-in { animation: tut-step 0.2s ease-out; }
 @keyframes tut-step { from { opacity: 0; transform: translateY(4px); } }
@@ -1046,4 +1047,17 @@ html.ui-switching::after {
     border-color: color-mix(in srgb, var(--hud-a) 55%, transparent);
   }
   [data-ui='game'] .hud-chip.hud-round-sm:hover { transform: none; }
+}
+
+/* Animasi masuk Hero — murni CSS (jalan dari HTML server tanpa menunggu
+   hydrate), supaya elemen LCP tidak tertahan JavaScript. `both` = tetap
+   tersembunyi selama delay, lalu berhenti di keadaan alami elemen. */
+@keyframes hero-rise { from { opacity: 0; transform: translate3d(0, 20px, 0); } }
+@keyframes hero-char { from { opacity: 0; transform: translate3d(0, 24px, 0); } }
+@keyframes hero-slide { from { opacity: 0; transform: translate3d(-20px, 0, 0); } }
+.hero-rise { animation: hero-rise 0.6s ease-out both; }
+.hero-char { animation: hero-char 0.4s ease-out both; }
+.hero-slide { animation: hero-slide 0.5s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise, .hero-char, .hero-slide { animation: none; }
 }

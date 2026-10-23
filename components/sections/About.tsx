@@ -2,7 +2,7 @@
 
 import Reveal from '@/components/ui/Reveal'
 import Image from 'next/image'
-import * as Icons from 'lucide-react'
+import { Cpu, getIcon } from '@/lib/icons'
 import type { LucideIcon } from 'lucide-react'
 import type { AboutSection } from '@/lib/types'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
@@ -11,10 +11,7 @@ import { useLanguage } from '@/lib/i18n/LanguageProvider'
  *  database sebagai text, dipilih admin lewat icon picker). Fallback ke
  *  Cpu kalau nama tidak dikenali (mis. data lama atau typo). */
 function resolveIcon(iconName: string): LucideIcon {
-  const matchedIcon = (Icons as unknown as Record<string, LucideIcon>)[
-    iconName
-  ]
-  return matchedIcon ?? Icons.Cpu
+  return getIcon(iconName, Cpu)
 }
 
 /**

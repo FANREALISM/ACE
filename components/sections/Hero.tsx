@@ -28,9 +28,6 @@ function MenuButton({ item, index, label }: MenuButtonProps) {
 
   const menuButtonContent = (
     <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       className="group relative flex items-center gap-3 md:gap-4 py-2 md:py-4 cursor-pointer select-none"
@@ -55,16 +52,19 @@ function MenuButton({ item, index, label }: MenuButtonProps) {
     </motion.div>
   )
 
+  // Animasi masuk (geser dari kiri, bertingkat) lewat CSS — lihat .hero-slide.
+  const entranceStyle = { animationDelay: `${0.25 + index * 0.08}s` }
+
   if (item.isAnchor) {
     return (
-      <a href={item.href} aria-label={label}>
+      <a href={item.href} aria-label={label} className="hero-slide block" style={entranceStyle}>
         {menuButtonContent}
       </a>
     )
   }
 
   return (
-    <Link href={item.href} aria-label={label}>
+    <Link href={item.href} aria-label={label} className="hero-slide block" style={entranceStyle}>
       {menuButtonContent}
     </Link>
   )
@@ -199,12 +199,12 @@ export default function Hero({ profile }: { profile: Profile | null }) {
         className="relative z-10 w-full max-w-6xl mx-auto px-6 md:px-12 grid md:grid-cols-2 gap-8 md:gap-16 items-center"
       >
         {/* Kolom kiri: foto profil + nama + role + CV */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex flex-col items-start gap-5 md:gap-8"
-        >
+        {/* Animasi masuk lewat CSS (.hero-rise), BUKAN Framer Motion
+            `initial`: initial menulis opacity:0 ke HTML server dan baru
+            dibuka setelah hydrate — di HP lemah konten Hero (elemen LCP)
+            tak terlihat sampai JS selesai (±3 dtk terukur). Animasi CSS
+            jalan langsung dari HTML tanpa menunggu JavaScript. */}
+        <div className="hero-rise flex flex-col items-start gap-5 md:gap-8">
           {profile && (
             <div
               data-tutorial="hero-status"
@@ -284,19 +284,13 @@ export default function Hero({ profile }: { profile: Profile | null }) {
                       dekorasi visual bagi yang bisa melihat. */}
                   <span aria-hidden="true" className="inline-block">
                     {displayName.split('').map((character, characterIndex) => (
-                      <motion.span
+                      <span
                         key={characterIndex}
-                        initial={{ opacity: 0, y: 24 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                          duration: 0.4,
-                          delay: 0.3 + characterIndex * 0.03,
-                          ease: 'easeOut',
-                        }}
-                        className="inline-block"
+                        className="hero-char inline-block"
+                        style={{ animationDelay: `${0.1 + characterIndex * 0.03}s` }}
                       >
                         {character === ' ' ? '\u00A0' : character}
-                      </motion.span>
+                      </span>
                     ))}
                   </span>
                 </h1>
@@ -320,7 +314,7 @@ export default function Hero({ profile }: { profile: Profile | null }) {
               </MagneticButton>
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* Kolom kanan: menu navigasi vertikal */}
         <nav aria-label="Main menu" data-tutorial="hero-menu" className="flex flex-col">

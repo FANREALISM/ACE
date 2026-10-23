@@ -1,7 +1,6 @@
 'use client'
 
 import { useId, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Send, CheckCircle2 } from 'lucide-react'
 
 type SubmissionStatus = 'idle' | 'sending' | 'sent' | 'error'
@@ -14,7 +13,6 @@ type SubmissionStatus = 'idle' | 'sending' | 'sent' | 'error'
  * upgrade kalau spam jadi masalah nyata).
  */
 export default function ContactForm() {
-  const supabase = createClient()
   // id unik per field supaya <label htmlFor> benar-benar terhubung ke input
   // (versi lama: label tanpa htmlFor — pembaca layar membacakan "edit text"
   // tanpa nama, dan mengklik label tidak memfokuskan input).
@@ -58,6 +56,11 @@ export default function ContactForm() {
     setSubmissionStatus('sending')
     setErrorMessage(null)
 
+    // Client Supabase (±60 KB gzip) dimuat HANYA saat form dikirim, bukan
+    // di bundle awal halaman — pengunjung yang tidak mengirim pesan tidak
+    // pernah mengunduh/mengeksekusinya.
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
     const { error: insertError } = await supabase
       .from('contact_messages')
       .insert({ name, email, message })

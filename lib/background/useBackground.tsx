@@ -13,6 +13,7 @@ import {
   detectInitialMode,
   startPerformanceProbe,
 } from './devicePerformance'
+import { useHasInteracted } from '@/lib/interaction'
 
 /**
  * State pilihan latar belakang pengunjung.
@@ -122,8 +123,12 @@ export function BackgroundProvider({
   // memilih sendiri — pilihan manual tidak pernah ditimpa. Kalau lambat,
   // turun ke ambient dan INGAT di kunci terpisah (kunjungan berikutnya
   // langsung ringan). Pengunjung tetap bisa memilih PS2 lagi secara manual.
+  // Probe baru jalan setelah interaksi pertama — saat itulah canvas PS2
+  // benar-benar mulai (lihat Background.tsx); mengukur sebelum itu hanya
+  // melihat halaman diam yang selalu "lancar".
+  const hasInteracted = useHasInteracted()
   useEffect(() => {
-    if (mode !== 'ps2' || readStoredMode() !== null) return
+    if (mode !== 'ps2' || !hasInteracted || readStoredMode() !== null) return
     return startPerformanceProbe(() => {
       document.documentElement.setAttribute('data-bkg', 'ambient')
       setModeState('ambient')
@@ -134,7 +139,7 @@ export function BackgroundProvider({
         // Tidak persisten — tidak apa-apa.
       }
     })
-  }, [mode])
+  }, [mode, hasInteracted])
 
   // Sinkron antar-tab: ubah pilihan di satu tab, tab lain ikut berubah.
   useEffect(() => {

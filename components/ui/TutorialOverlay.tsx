@@ -118,6 +118,9 @@ function TutorialLayer() {
   // Naik setiap kali viewport berubah, supaya dialog tanpa target (posisi
   // di tengah layar) ikut dihitung ulang saat layar diputar / di-resize.
   const [viewportTick, setViewportTick] = useState(0)
+  // Animasi geser dialog baru dinyalakan SETELAH posisi pertama terpasang,
+  // supaya dialog tidak "meluncur" dari pojok kiri atas saat pertama muncul.
+  const [canAnimate, setCanAnimate] = useState(false)
   useEffect(() => {
     function handleResize() {
       setViewportTick((tick) => tick + 1)
@@ -239,6 +242,8 @@ function TutorialLayer() {
         ? previous
         : { top, left },
     )
+    const frame = window.requestAnimationFrame(() => setCanAnimate(true))
+    return () => window.cancelAnimationFrame(frame)
   }, [rect, stepIndex, locale, viewportTick])
 
   // Pembaca layar: fokus tetap di tombol, jadi isi langkah baru diumumkan
@@ -271,7 +276,13 @@ function TutorialLayer() {
         <div
           aria-hidden="true"
           className="tut-spot"
-          style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
+          // transform (bukan top/left): berpindah posisi lewat compositor,
+          // tidak dihitung sebagai layout shift (CLS) oleh browser.
+          style={{
+            transform: `translate3d(${rect.left}px, ${rect.top}px, 0)`,
+            width: rect.width,
+            height: rect.height,
+          }}
         />
       ) : (
         <div aria-hidden="true" className="tut-dim" />
@@ -283,10 +294,12 @@ function TutorialLayer() {
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={bodyId}
-        className="tut-dialog glass-card terminal:bg-[color:var(--panel-bg)] rounded-md fixed z-[10001] w-[min(92vw,26rem)] px-5 pt-4 pb-7 text-white/80 shadow-2xl"
+        className={`tut-dialog glass-card terminal:bg-[color:var(--panel-bg)] rounded-md fixed z-[10001] w-[min(92vw,26rem)] px-5 pt-4 pb-7 text-white/80 shadow-2xl ${canAnimate ? 'tut-dialog-glide' : ''}`}
         style={{
-          top: position?.top ?? 0,
-          left: position?.left ?? 0,
+          top: 0,
+          left: 0,
+          // transform, bukan top/left → bukan layout shift (CLS).
+          transform: `translate3d(${position?.left ?? 0}px, ${position?.top ?? 0}px, 0)`,
           visibility: position ? 'visible' : 'hidden',
         }}
       >

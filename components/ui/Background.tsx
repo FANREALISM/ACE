@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useBackground } from '@/lib/background/useBackground'
+import { useHasInteracted } from '@/lib/interaction'
 
 /**
  * Chunk PS2 dipisah dari bundle utama lewat next/dynamic dengan
@@ -90,6 +91,10 @@ export default function Background() {
   const pathname = usePathname()
   const { mode } = useBackground()
   const [isIdle, setIsIdle] = useState(false)
+  // Canvas PS2 baru dimuat & dijalankan setelah pengunjung berinteraksi
+  // (scroll/ketuk/tombol): selama pemuatan awal CPU sepenuhnya untuk
+  // hydrate & LCP. Sebelum itu yang tampil = layer statis `bkg-ps2-fallback`.
+  const hasInteracted = useHasInteracted()
 
   useEffect(() => runWhenIdle(() => setIsIdle(true), 2500), [])
 
@@ -112,7 +117,7 @@ export default function Background() {
         <div className="bkg-layer bkg-normal" />
       </div>
 
-      {mode === 'ps2' && isIdle && <PS2Background />}
+      {mode === 'ps2' && isIdle && hasInteracted && <PS2Background />}
     </>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import * as Icons from 'lucide-react'
+import { Briefcase, ChevronDown, GraduationCap, getIcon } from '@/lib/icons'
 import type { LucideIcon } from 'lucide-react'
 import type { TimelineEntry, TimelineEntryType } from '@/lib/types'
 import { useLanguage } from '@/lib/i18n/LanguageProvider'
@@ -23,11 +23,7 @@ const TYPE_ORDER: TimelineEntryType[] = ['career', 'education']
  *  Fallback mengikuti tipe entri (Briefcase / GraduationCap) kalau nama
  *  tidak dikenali, mis. data lama atau typo dari Table Editor. */
 function resolveIcon(iconName: string, type: TimelineEntryType): LucideIcon {
-  const matchedIcon = (Icons as unknown as Record<string, LucideIcon>)[
-    iconName
-  ]
-  if (matchedIcon) return matchedIcon
-  return type === 'education' ? Icons.GraduationCap : Icons.Briefcase
+  return getIcon(iconName, type === 'education' ? GraduationCap : Briefcase)
 }
 
 /** Format "YYYY-MM-DD" → "Mar 2022" tanpa lewat timezone lokal.
@@ -176,7 +172,7 @@ function ExpandableDescription({
           className={`group mt-2 inline-flex items-center gap-1.5 min-h-8 font-mono text-[11px] uppercase tracking-widest hover:opacity-80 transition-opacity ${accentText}`}
         >
           <span>{isExpanded ? showLessLabel : showMoreLabel}</span>
-          <Icons.ChevronDown
+          <ChevronDown
             size={12}
             aria-hidden="true"
             className={`transition-transform duration-300 ${
@@ -549,7 +545,7 @@ export default function Timeline({ entries }: { entries: TimelineEntry[] }) {
                       ? translations.timeline.showLess
                       : `${translations.timeline.showMore} (+${extraEntries.length})`}
                   </span>
-                  <Icons.ChevronDown
+                  <ChevronDown
                     size={14}
                     aria-hidden="true"
                     className={`transition-transform duration-300 ${
